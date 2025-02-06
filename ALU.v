@@ -1,0 +1,109 @@
+`timescale 1 ns/1 ps
+module ALU(
+    input  wire [9:0] A,         // 10-bit operand A (e.g. from R[rs])
+    input  wire [9:0] B,         // 10-bit operand B (e.g. from R[rt] or sign-extended imm)
+    input  wire [2:0] alu_ctrl,  // ALU control signal (selects operation)
+    output wire [9:0] result,    // 10-bit result output (goes to R[rd] or R[rt])
+    output wire       halt       // Halt flag (for HALT instruction)
+);
+
+    // -----------------------------------------------------------------
+    // Internal wires for addition and subtraction
+    // -----------------------------------------------------------------
+    wire [9:0] add_result;
+    wire       add_cout;
+    
+    // For subtraction, compute A - B = A + (~B) + 1
+    wire [9:0] B_inverted;
+    genvar j;
+    generate
+        for (j = 0; j < 10; j = j + 1) begin : invert_B_loop
+            not u_not(B_inverted[j], B[j]);
+        end
+    endgenerate
+    
+    wire [9:0] sub_result;
+    wire       sub_cout;
+    
+    // 10-bit addition for ADD (A + B) with carry in = 0
+    ripple_carry_adder_10 adder_inst (
+        .A   (A),
+        .B   (B),
+        .cin (1'b0),
+        .sum (add_result),
+        .cout(add_cout)
+    );
+    
+    // 10-bit subtraction for SUB (A - B) implemented as A + (~B) + 1
+    ripple_carry_adder_10 subtractor_inst (
+        .A   (A),
+        .B   (B_inverted),
+        .cin (1'b1),
+        .sum (sub_result),
+        .cout(sub_cout)
+    );
+    
+    // -----------------------------------------------------------------
+    // NAND Operation (bitwise NAND of A and B)
+    // -----------------------------------------------------------------
+    wire [9:0] nand_result;
+    generate
+        for (j = 0; j < 10; j = j + 1) begin : nand_loop
+            nand u_nand(nand_result[j], A[j], B[j]);
+        end
+    endgenerate
+    
+    // -----------------------------------------------------------------
+    // Shift Operations (using behavioral assignment, which is allowed)
+    // -----------------------------------------------------------------
+    wire [9:0] slr_result;  // Shift Right Logical: A >> 1
+    wire [9:0] sll_result;  // Shift Left Logical: A << 1
+    assign slr_result = A >> 1;
+    assign sll_result = A << 1;
+    
+    // -----------------------------------------------------------------
+    // SLT Operation (Set Less Than)
+    // Compare A and B by using the subtraction result.
+    // If A - B is negative (i.e. MSB of sub_result is 1), then set result = 1;
+    // otherwise, result = 0 (in 10 bits: either 10'b0000000001 or 10'b0).
+    // -----------------------------------------------------------------
+    wire [9:0] slt_result;
+    assign slt_result = sub_result[9] ? 10'b0000000001 : 10'b0000000000;
+    
+    // -----------------------------------------------------------------
+    // ALU Output Multiplexer
+    // -----------------------------------------------------------------
+    reg [9:0] alu_out;
+    reg       halt_flag;
+    
+    // The ALU control coding is defined as:
+    // 3'b000: ADD       → result = A + B
+    // 3'b001: SUB       → result = A - B
+    // 3'b010: SLT       → result = (A < B) ? 1 : 0
+    // 3'b011: NAND      → result = ~(A & B)
+    // 3'b100: SLR       → result = A >> 1
+    // 3'b101: SLL       → result = A << 1
+    // 3'b110: HALT      → set halt flag, result = 0
+    // default:        result = 0
+    always @(*) begin
+        // Default values
+        halt_flag = 1'b0;
+        case (alu_ctrl)
+            3'b000: alu_out = add_result;   // ADD
+            3'b001: alu_out = sub_result;   // SUB
+            3'b010: alu_out = slt_result;   // SLT
+            3'b011: alu_out = nand_result;  // NAND
+            3'b100: alu_out = slr_result;   // SLR (shift right logical)
+            3'b101: alu_out = sll_result;   // SLL (shift left logical)
+            3'b110: begin
+                alu_out   = 10'b0;          // For HALT, drive result low
+                halt_flag = 1'b1;           // and set the halt flag.
+            end
+            default: alu_out = 10'b0;
+        endcase
+    end
+    
+    assign result = alu_out;
+    assign halt   = halt_flag;
+
+endmodule
