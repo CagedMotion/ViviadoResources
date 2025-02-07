@@ -7,9 +7,9 @@ module ALU(
     output wire       halt       // Halt flag (for HALT instruction)
 );
 
-    // -----------------------------------------------------------------
+
     // Internal wires for addition and subtraction
-    // -----------------------------------------------------------------
+ 
     wire [9:0] add_result;
     wire       add_cout;
     
@@ -43,9 +43,9 @@ module ALU(
         .cout(sub_cout)
     );
     
-    // -----------------------------------------------------------------
+
     // NAND Operation (bitwise NAND of A and B)
-    // -----------------------------------------------------------------
+   
     wire [9:0] nand_result;
     generate
         for (j = 0; j < 10; j = j + 1) begin : nand_loop
@@ -53,26 +53,25 @@ module ALU(
         end
     endgenerate
     
-    // -----------------------------------------------------------------
-    // Shift Operations (using behavioral assignment, which is allowed)
-    // -----------------------------------------------------------------
+
+    // Shift Operations
+  
     wire [9:0] slr_result;  // Shift Right Logical: A >> 1
     wire [9:0] sll_result;  // Shift Left Logical: A << 1
     assign slr_result = A >> 1;
     assign sll_result = A << 1;
-    
-    // -----------------------------------------------------------------
+
     // SLT Operation (Set Less Than)
     // Compare A and B by using the subtraction result.
     // If A - B is negative (i.e. MSB of sub_result is 1), then set result = 1;
     // otherwise, result = 0 (in 10 bits: either 10'b0000000001 or 10'b0).
-    // -----------------------------------------------------------------
+
     wire [9:0] slt_result;
     assign slt_result = sub_result[9] ? 10'b0000000001 : 10'b0000000000;
     
-    // -----------------------------------------------------------------
+    
     // ALU Output Multiplexer
-    // -----------------------------------------------------------------
+
     reg [9:0] alu_out;
     reg       halt_flag;
     
