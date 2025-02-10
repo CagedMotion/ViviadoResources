@@ -9,7 +9,6 @@ module ALU(
 
 
     // Internal wires for addition and subtraction
- 
     wire [9:0] add_result;
     wire       add_cout;
     
@@ -45,7 +44,6 @@ module ALU(
     
 
     // NAND Operation (bitwise NAND of A and B)
-   
     wire [9:0] nand_result;
     generate
         for (j = 0; j < 10; j = j + 1) begin : nand_loop
@@ -55,7 +53,6 @@ module ALU(
     
 
     // Shift Operations
-  
     wire [9:0] slr_result;  // Shift Right Logical: A >> 1
     wire [9:0] sll_result;  // Shift Left Logical: A << 1
     assign slr_result = A >> 1;
@@ -71,7 +68,6 @@ module ALU(
     
     
     // ALU Output Multiplexer
-
     reg [9:0] alu_out;
     reg       halt_flag;
     
@@ -105,4 +101,74 @@ module ALU(
     assign result = alu_out;
     assign halt   = halt_flag;
 
+endmodule
+
+module tb_ALU;
+    // Inputs
+    reg [9:0] A, B;
+    reg [2:0] alu_ctrl;
+    // Outputs
+    wire [9:0] result;
+    wire halt;
+    
+    // Instantiate the ALU module (make sure the module name matches your design)
+    ALU dut (
+         .A(A),
+         .B(B),
+         .alu_ctrl(alu_ctrl),
+         .result(result),
+         .halt(halt)
+    );
+    
+    initial begin
+        // Test ADD: alu_ctrl = 3'b000 → result = A + B
+        A = 10'd15;
+        B = 10'd10;
+        alu_ctrl = 3'b000;
+        #10;
+        $display("ADD: A=%d, B=%d, result=%d, halt=%b", A, B, result, halt);
+        
+        // Test SUB: alu_ctrl = 3'b001 → result = A - B
+        A = 10'd20;
+        B = 10'd8;
+        alu_ctrl = 3'b001;
+        #10;
+        $display("SUB: A=%d, B=%d, result=%d, halt=%b", A, B, result, halt);
+        
+        // Test SLT: alu_ctrl = 3'b010 → result = (A < B) ? 1 : 0
+        A = 10'd5;
+        B = 10'd10;
+        alu_ctrl = 3'b010;
+        #10;
+        $display("SLT: A=%d, B=%d, result=%d, halt=%b", A, B, result, halt);
+        
+        // Test NAND: alu_ctrl = 3'b011 → result = ~(A & B)
+        A = 10'b1010101010;
+        B = 10'b1100110011;
+        alu_ctrl = 3'b011;
+        #10;
+        $display("NAND: A=%b, B=%b, result=%b, halt=%b", A, B, result, halt);
+        
+        // Test SLR: alu_ctrl = 3'b100 → result = A >> 1
+        A = 10'b1000000001;
+        // B is don’t-care for shift operations
+        alu_ctrl = 3'b100;
+        #10;
+        $display("SLR: A=%b, result=%b, halt=%b", A, result, halt);
+        
+        // Test SLL: alu_ctrl = 3'b101 → result = A << 1
+        A = 10'b0000011111;
+        alu_ctrl = 3'b101;
+        #10;
+        $display("SLL: A=%b, result=%b, halt=%b", A, result, halt);
+        
+        // Test HALT: alu_ctrl = 3'b110 → result = 0, halt flag = 1
+        A = 10'd0;
+        B = 10'd0;
+        alu_ctrl = 3'b110;
+        #10;
+        $display("HALT: A=%d, B=%d, result=%d, halt=%b", A, B, result, halt);
+        
+        $finish;
+    end
 endmodule
