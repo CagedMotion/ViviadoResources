@@ -65,7 +65,8 @@ module tb_register_file;
        clk = 0;
        forever #5 clk = ~clk;
     end
-    
+   
+    parameter PERIOD = 10;
     // Test procedure
     initial begin
        // Apply reset
@@ -75,14 +76,14 @@ module tb_register_file;
        wdata = 10'd0;
        raddr1 = 3'b000;
        raddr2 = 3'b001;
-       #10;
+       #PERIOD;
        rst = 0;
        
        // Write to register 1 (writeable, since 1 < 4)
        we = 1;
        waddr = 3'b001;  // Register 1
        wdata = 10'd55;
-       #10;  // Data written on next clock edge
+       #PERIOD;  // Data written on next clock edge
        we = 0;
        
        // Attempt to write to register 4 (not writeable, since 4 >= 4)
@@ -90,7 +91,7 @@ module tb_register_file;
        we = 1;
        waddr = 3'b100;  // Register 4
        wdata = 10'd100;
-       #10;
+       #PERIOD;
        we = 0;
        
        // Read from register 1 and register 4
@@ -103,13 +104,13 @@ module tb_register_file;
        we = 1;
        waddr = 3'b011; // Register 3
        wdata = 10'd200;
-       #10;
+       #PERIOD;
        we = 0;
        
        // Read from register 3 and register 0
        raddr1 = 3'b011; // Expect 200 from register 3
        raddr2 = 3'b000; // Expect 0 from register 0 (if not written before)
-       #10;
+       #PERIOD;
        $display("Read1: Register 3 = %d, Read2: Register 0 = %d", rdata1, rdata2);
        
        $finish;

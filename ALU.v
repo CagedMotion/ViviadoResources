@@ -119,54 +119,54 @@ module tb_ALU;
          .result(result),
          .halt(halt)
     );
-    
+    parameter PERIOD = 10;
     initial begin
         // Test ADD: alu_ctrl = 3'b000 → result = A + B
         A = 10'd15;
         B = 10'd10;
         alu_ctrl = 3'b000;
-        #10;
+        #PERIOD;
         $display("ADD: A=%d, B=%d, result=%d, halt=%b", A, B, result, halt);
         
         // Test SUB: alu_ctrl = 3'b001 → result = A - B
         A = 10'd20;
         B = 10'd8;
         alu_ctrl = 3'b001;
-        #10;
+        #PERIOD;
         $display("SUB: A=%d, B=%d, result=%d, halt=%b", A, B, result, halt);
         
         // Test SLT: alu_ctrl = 3'b010 → result = (A < B) ? 1 : 0
         A = 10'd5;
         B = 10'd10;
         alu_ctrl = 3'b010;
-        #10;
+        #PERIOD;
         $display("SLT: A=%d, B=%d, result=%d, halt=%b", A, B, result, halt);
         
         // Test NAND: alu_ctrl = 3'b011 → result = ~(A & B)
         A = 10'b1010101010;
         B = 10'b1100110011;
         alu_ctrl = 3'b011;
-        #10;
+        #PERIOD;
         $display("NAND: A=%b, B=%b, result=%b, halt=%b", A, B, result, halt);
         
         // Test SLR: alu_ctrl = 3'b100 → result = A >> 1
         A = 10'b1000000001;
         // B is don’t-care for shift operations
         alu_ctrl = 3'b100;
-        #10;
+        #PERIOD;
         $display("SLR: A=%b, result=%b, halt=%b", A, result, halt);
         
         // Test SLL: alu_ctrl = 3'b101 → result = A << 1
         A = 10'b0000011111;
         alu_ctrl = 3'b101;
-        #10;
+        #PERIOD;
         $display("SLL: A=%b, result=%b, halt=%b", A, result, halt);
         
         // Test HALT: alu_ctrl = 3'b110 → result = 0, halt flag = 1
         A = 10'd0;
         B = 10'd0;
         alu_ctrl = 3'b110;
-        #10;
+        #PERIOD;
         $display("HALT: A=%d, B=%d, result=%d, halt=%b", A, B, result, halt);
         
         $finish;
