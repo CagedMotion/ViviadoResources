@@ -30,3 +30,83 @@ module program_counter(
     assign pc = current_pc;
 
 endmodule
+
+module tb_program_counter;
+    // Testbench signals
+    reg         clk;
+    reg         reset;
+    reg         branch;
+    reg  [9:0]  branch_addr;
+    wire [9:0]  pc;
+
+    // Instantiate the program_counter module (Device Under Test)
+    program_counter dut (
+        .clk(clk),
+        .reset(reset),
+        .branch(branch),
+        .branch_addr(branch_addr),
+        .pc(pc)
+    );
+
+    // Clock Generation: 10 ns period (5 ns high, 5 ns low)
+    initial begin
+        clk = 0;
+        forever #5 clk = ~clk;
+    end
+    
+    parameter PERIOD = 10;
+    // Stimulus for the program counter
+    initial begin
+        // Initialize inputs
+        reset = 1;
+        branch = 0;
+        branch_addr = 10'd0;
+
+        // Apply reset for a couple of clock cycles
+        #PERIOD;  // Wait 10 ns
+        reset = 0;  // Deassert reset
+
+        // Let the PC increment sequentially for a few cycles
+        // At this point, since branch is 0, PC should increment by 1 each cycle.
+        #PERIOD;  // After first rising edge post-reset
+        $display("Time %0t: PC = %d (expected ~1)", $time, pc);
+        #PERIOD;
+        $display("Time %0t: PC = %d (expected ~2)", $time, pc);
+        #PERIOD;
+        $display("Time %0t: PC = %d (expected ~3)", $time, pc);
+
+        // Now, test the branch functionality.
+        // Assert the branch signal with a branch address.
+        branch = 1;
+        branch_addr = 10'd100;
+        #PERIOD;  
+        // On the next rising edge, PC should load branch_addr (100) rather than increment.
+        $display("Time %0t: PC = %d (expected 100 due to branch)", $time, pc);
+        branch = 0;  // Deassert branch for subsequent cycles
+
+        // Let the PC increment normally from the branch address.
+        #PERIOD;
+        $display("Time %0t: PC = %d (expected 101)", $time, pc);
+        #PERIOD;
+        $display("Time %0t: PC = %d (expected 102)", $time, pc);
+
+        // Test another branch later in the simulation.
+        #PERIOD;
+        branch = 1;
+        branch_addr = 10'd200;
+        #PERIOD;
+        $display("Time %0t: PC = %d (expected 200 due to branch)", $time, pc);
+        branch = 0;
+
+        // Let the PC run a few more cycles to confirm normal operation resumes.
+        #PERIOD;
+        $display("Time %0t: PC = %d (expected 201)", $time, pc);
+        #10;
+        $display("Time %0t: PC = %d (expected 202)", $time, pc);
+
+        // End simulation
+        #PERIOD;
+        $finish;
+    end
+
+endmodule
