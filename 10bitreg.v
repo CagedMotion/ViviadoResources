@@ -1,6 +1,6 @@
 `timescale 1 ns/1 ps
 module register_10bit(
-    output reg [9:0] dout,
+    output wire [9:0] dout,
     input wire clk, reset, en,
     input wire [9:0] din );
     
@@ -16,12 +16,5 @@ module register_10bit(
                   REG9(.clk(clk), .reset(reset), .en(en), .dout(w1[8]), .din(din[8])),
                   REG10(.clk(clk), .reset(reset), .en(en), .dout(w1[9]), .din(din[9]));
     
-    always @(posedge clk) begin
-        if (reset == 1'b1) begin
-            dout = 10'b0;
-        end
-        else if (en) begin
-            dout <= w1;
-        end
-    end
+    assign dout = w1;
 endmodule

@@ -1,5 +1,5 @@
 `timescale 1 ns/1 ps
-module register_t1(
+module register_s3(
     output wire [9:0] dout,
     input wire clk, reset, en,
     input wire [9:0] din );
