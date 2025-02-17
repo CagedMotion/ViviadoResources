@@ -89,16 +89,17 @@ end
     //assign rdata2 = (bank_sel == 1'b0) ? bank0[raddr2] : bank1[raddr2];
 
 endmodule
+
 module tb_register_file;
     // Testbench signals
     reg         clk;
     reg         rst;
     reg         we;
-    reg         bank_sel;      // Bank select signal: 0 for bank 0, 1 for bank 1
+    reg         bank_sel;      // 0 for Bank 0, 1 for Bank 1
     reg  [1:0]  waddr;         // 2-bit write address (0 to 3)
-    reg  [9:0]  wdata;
-    reg  [1:0]  raddr1, raddr2; // 2-bit read addresses
-    wire [9:0]  rdata1, rdata2;
+    reg  [9:0]  wdata;         // 10-bit data to write
+    reg  [1:0]  raddr1, raddr2; // 2-bit read addresses (0 to 3)
+    wire [9:0]  rdata1, rdata2;  // 10-bit read data outputs
 
     // Instantiate the register file with bank switching
     register_file dut (
@@ -124,71 +125,92 @@ module tb_register_file;
     
     // Test procedure
     initial begin
-       // Apply reset to initialize registers in both banks
-       rst = 1;
-       we = 0;
-       bank_sel = 0;
-       waddr = 2'b00;
-       wdata = 10'd0;
-       raddr1 = 2'b00;
-       raddr2 = 2'b01;
-       #PERIOD;
-       rst = 0;
-       
-       // --- Test Bank 0 ---
-       // Write to Bank 0, register 1
-       we = 1;
-       bank_sel = 0;      // Select bank 0
-       waddr = 2'b01;     // Register 1 in bank 0
-       wdata = 10'd55;
-       #PERIOD;
-       we = 0;
-       
-       // Write to Bank 0, register 3
-       we = 1;
-       bank_sel = 0;
-       waddr = 2'b11;     // Register 3 in bank 0
-       wdata = 10'd10;
-       #PERIOD;
-       we = 0;
-       
-       // Read from Bank 0: Expect register 1 = 55 and register 3 = 200
-       bank_sel = 0;
-       //raddr1 = 2'b01;    // Expect 55 from bank 0
-       raddr2 = 2'b11;    // Expect 200 from bank 0
-       #PERIOD;
-       $display("Bank 0: rdata1 (Reg1) = %d, rdata2 (Reg3) = %d", rdata1, rdata2);
-       
-       // --- Test Bank 1 ---
-       // Write to Bank 1, register 2
-       we = 1;
-       bank_sel = 1;      // Select bank 1
-       waddr = 2'b10;     // Register 2 in bank 1
-       wdata = 10'd100;
-       #PERIOD;
-       we = 0;
-       
-       // Write to Bank 1, register 0
-       we = 1;
-       waddr = 2'b00;     // Register 0 in bank 1
-       wdata = 10'd150;
-       #PERIOD;
-       we = 0;
-       
-       // Read from Bank 1: Expect register 2 = 100 and register 0 = 150
-       bank_sel = 1;
-       raddr1 = 2'b10;    // Expect 100 from bank 1
-       raddr2 = 2'b00;    // Expect 150 from bank 1
-       #PERIOD;
-       $display("Bank 1: rdata1 (Reg2) = %d, rdata2 (Reg0) = %d", rdata1, rdata2);
-       
-       // Confirm that switching banks keeps the data isolated:
-       // Read from Bank 0, register 2 (which was never written) should be 0.
-       bank_sel = 0;
-       raddr1 = 2'b10;    // Expect 0 in bank 0, reg2
-       #PERIOD;
-       $display("Bank 0: rdata1 (Reg2) = %d (expected 0)", rdata1);
-       
-       $finish;
+        // -------- Initialization --------
+        rst = 1;
+        we = 0;
+        bank_sel = 0;  // Default to Bank 0
+        waddr = 2'b00;
+        wdata = 10'd0;
+        raddr1 = 2'b00;
+        raddr2 = 2'b01;
+        #PERIOD;
+        rst = 0;
+        #PERIOD;
+        
+        // -------- Test Bank 0: Write to multiple registers --------
+        // Write 55 to Bank 0, Reg1 (waddr = 01)
+        we = 1;
+        bank_sel = 0;      
+        waddr = 2'b01;
+        wdata = 10'd55;
+        #PERIOD;
+        we = 0;
+        #PERIOD;
+        
+        // Write 100 to Bank 0, Reg2 (waddr = 10)
+        we = 1;
+        bank_sel = 0;
+        waddr = 2'b10;
+        wdata = 10'd100;
+        #PERIOD;
+        we = 0;
+        #PERIOD;
+        
+        // Write 75 to Bank 0, Reg3 (waddr = 11)
+        we = 1;
+        bank_sel = 0;
+        waddr = 2'b11;
+        wdata = 10'd75;
+        #PERIOD;
+        we = 0;
+        #PERIOD;
+        
+        // Read back from Bank 0: 
+        // Expect Reg1 = 55, Reg2 = 100, Reg3 = 75.
+        bank_sel = 0;
+        raddr1 = 2'b01;    // Read Bank0 Reg1
+        raddr2 = 2'b10;    // Read Bank0 Reg2
+        #PERIOD;
+        $display("Time %0t: Bank0: rdata1 (Reg1) = %d, rdata2 (Reg2) = %d", $time, rdata1, rdata2);
+        
+        // Change read addresses to check Reg3 as well.
+        raddr1 = 2'b11;    // Read Bank0 Reg3
+        #PERIOD;
+        $display("Time %0t: Bank0: rdata1 (Reg3) = %d (expected 75)", $time, rdata1);
+        
+        // -------- Test Bank 1: Write to multiple registers --------
+        // Write 200 to Bank 1, Reg0 (waddr = 00)
+        we = 1;
+        bank_sel = 1;      
+        waddr = 2'b00;
+        wdata = 10'd200;
+        #PERIOD;
+        we = 0;
+        #PERIOD;
+        
+        // Write 250 to Bank 1, Reg3 (waddr = 11)
+        we = 1;
+        bank_sel = 1;
+        waddr = 2'b11;
+        wdata = 10'd250;
+        #PERIOD;
+        we = 0;
+        #PERIOD;
+        
+        // Read back from Bank 1:
+        bank_sel = 1;
+        raddr1 = 2'b00;    // Expect 200 from Bank1 Reg0
+        raddr2 = 2'b11;    // Expect 250 from Bank1 Reg3
+        #PERIOD;
+        $display("Time %0t: Bank1: rdata1 (Reg0) = %d, rdata2 (Reg3) = %d", $time, rdata1, rdata2);
+        
+        // -------- Confirm Bank Isolation --------
+        // Switch back to Bank 0 and read Reg2 (should remain 100)
+        bank_sel = 0;
+        raddr1 = 2'b10;    // Bank0 Reg2
+        #PERIOD;
+        $display("Time %0t: Bank0: rdata1 (Reg2) = %d (expected 100)", $time, rdata1);
+        
+        $finish;
     end
 endmodule
