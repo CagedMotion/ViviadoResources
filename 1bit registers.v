@@ -12,6 +12,31 @@ module register_1bit (
             dout = din;
         end
     end
+<<<<<<< HEAD
+
+
+endmodule
+
+
+module tb_1reg();
+
+    wire dout;
+    reg clk, reset, en;
+    reg din;
+
+    register_1bit SUT(dout, clk, reset, en, din);
+
+    parameter PERIOD = 10;
+    initial clk = 1'b0;
+    always #(PERIOD/2) clk = ~clk;
+    
+    initial begin
+        reset = 1'b1; #PERIOD;
+        reset = 1'b0; din = 1'b1; en = 1'b1; #PERIOD; #PERIOD;
+    end
+endmodule
+=======
 endmodule
 
 // Test
+>>>>>>> 26a55ec5431e542d639c19c79fd50554e3f9ef76
