@@ -39,51 +39,50 @@ module register_file(
     // On a write, update the register in the selected bank.
     always @(posedge clk) begin
         if (rst == 1'b1) begin
-            w1 = 10'b0;
-            w2 = 10'b0;
-            w3 = 10'b0;
-            w4 = 10'b0;
-            w5 = 10'b0;
-            w6 = 10'b0;
-            w7 = 10'b0;
-            w8 = 10'b0;
-            rdata1 = 10'b0;
-            rdata2 = 10'b0; 
+           w1 <= 10'b0;
+           w2 <= 10'b0;
+           w3 <= 10'b0;
+           w4 <= 10'b0;
+           w5 <= 10'b0;
+           w6 <= 10'b0;
+           w7 <= 10'b0;
+           w8 <= 10'b0;
+           rdata1 <= 10'b0;
+           rdata2 <= 10'b0; 
         end else if (we == 1'b1) begin
-             case(write_selector)     
-                3'b000 : w1 = wdata;
-                3'b001 : w2 = wdata;
-                3'b010 : w3 = wdata;
-                3'b011 : w4 = wdata;
-                3'b100 : w5 = wdata;
-                3'b101 : w6 = wdata;
-                3'b110 : w7 = wdata;
-                3'b111 : w8 = wdata;
-                endcase                  
-            end
-        else begin
+            case(write_selector)     
+               3'b000 : w1 <= wdata;
+               3'b001 : w2 <= wdata;
+               3'b010 : w3 <= wdata;
+               3'b011 : w4 <= wdata;
+               3'b100 : w5 <= wdata;
+               3'b101 : w6 <= wdata;
+               3'b110 : w7 <= wdata;
+               3'b111 : w8 <= wdata;
+            endcase                  
+        end else begin
             case(read_selector0)
-                3'b000 : rdata1 = r1;
-                3'b001 : rdata1 = r2;
-                3'b010 : rdata1 = r3;
-                3'b011 : rdata1 = r4;
-                3'b100 : rdata1 = r5;
-                3'b101 : rdata1 = r6;
-                3'b110 : rdata1 = r7;
-                3'b111 : rdata1 = r8;
+                3'b000 : rdata1 <= r1;
+                3'b001 : rdata1 <= r2;
+                3'b010 : rdata1 <= r3;
+                3'b011 : rdata1 <= r4;
+                3'b100 : rdata1 <= r5;
+                3'b101 : rdata1 <= r6;
+                3'b110 : rdata1 <= r7;
+                3'b111 : rdata1 <= r8;
             endcase
             case(read_selector1)
-                3'b000 : rdata2 = r1;
-                3'b001 : rdata2 = r2;
-                3'b010 : rdata2 = r3;
-                3'b011 : rdata2 = r4;
-                3'b100 : rdata2 = r5;
-                3'b101 : rdata2 = r6;
-                3'b110 : rdata2 = r7;
-                3'b111 : rdata2 = r8;
+                3'b000 : rdata2 <= r1;
+                3'b001 : rdata2 <= r2;
+                3'b010 : rdata2 <= r3;
+                3'b011 : rdata2 <= r4;
+                3'b100 : rdata2 <= r5;
+                3'b101 : rdata2 <= r6;
+                3'b110 : rdata2 <= r7;
+                3'b111 : rdata2 <= r8;
             endcase 
         end
-end
+    end
     // Asynchronous (combinational) reads based on the bank selection.
     //assign rdata1 = (bank_sel == 1'b0) ? bank0[raddr1] : bank1[raddr1];
     //assign rdata2 = (bank_sel == 1'b0) ? bank0[raddr2] : bank1[raddr2];
@@ -91,126 +90,150 @@ end
 endmodule
 
 module tb_register_file;
-    // Testbench signals
-    reg         clk;
-    reg         rst;
-    reg         we;
-    reg         bank_sel;      // 0 for Bank 0, 1 for Bank 1
-    reg  [1:0]  waddr;         // 2-bit write address (0 to 3)
-    reg  [9:0]  wdata;         // 10-bit data to write
-    reg  [1:0]  raddr1, raddr2; // 2-bit read addresses (0 to 3)
-    wire [9:0]  rdata1, rdata2;  // 10-bit read data outputs
 
-    // Instantiate the register file with bank switching
-    register_file dut (
-       .clk(clk),
-       .rst(rst),
-       .we(we),
-       .bank_sel(bank_sel),
-       .waddr(waddr),
-       .wdata(wdata),
-       .raddr1(raddr1),
-       .raddr2(raddr2),
-       .rdata1(rdata1),
-       .rdata2(rdata2)
-    );
+  // Testbench signals
+  reg         clk;
+  reg         rst;
+  reg         we;
+  reg         bank_sel;
+  reg  [1:0]  waddr;
+  reg  [9:0]  wdata;
+  reg  [1:0]  raddr1;
+  reg  [1:0]  raddr2;
+  wire [9:0]  rdata1;
+  wire [9:0]  rdata2;
+  
+  // Instantiate the register_file module
+  register_file uut(
+    .clk(clk),
+    .rst(rst),
+    .we(we),
+    .bank_sel(bank_sel),
+    .waddr(waddr),
+    .wdata(wdata),
+    .raddr1(raddr1),
+    .raddr2(raddr2),
+    .rdata1(rdata1),
+    .rdata2(rdata2)
+  );
+  
+  // Clock generation: 10 ns period (5 ns high, 5 ns low)
+  initial begin
+    clk = 0;
+    forever #5 clk = ~clk;
+  end
+  
+  // Test sequence
+  initial begin
+    // --- Initialization ---
+    rst      = 1;          // start with reset asserted
+    we       = 0;          
+    bank_sel = 0;
+    waddr    = 2'b00;
+    wdata    = 10'b0;
+    raddr1   = 2'b00;
+    raddr2   = 2'b00;
     
-    // Clock generation: 10 ns period (5 ns high, 5 ns low)
-    initial begin
-       clk = 0;
-       forever #5 clk = ~clk;
-    end
-   
-    parameter PERIOD = 10;
+    // Let reset propagate
+    #12;
+    rst = 0;              // Deassert reset
     
-    // Test procedure
-    initial begin
-        // -------- Initialization --------
-        rst = 1;
-        we = 0;
-        bank_sel = 0;  // Default to Bank 0
-        waddr = 2'b00;
-        wdata = 10'd0;
-        raddr1 = 2'b00;
-        raddr2 = 2'b01;
-        #PERIOD;
-        rst = 0;
-        #PERIOD;
-        
-        // -------- Test Bank 0: Write to multiple registers --------
-        // Write 55 to Bank 0, Reg1 (waddr = 01)
-        we = 1;
-        bank_sel = 0;      
-        waddr = 2'b01;
-        wdata = 10'd55;
-        #PERIOD;
-        we = 0;
-        #PERIOD;
-        
-        // Write 100 to Bank 0, Reg2 (waddr = 10)
-        we = 1;
-        bank_sel = 0;
-        waddr = 2'b10;
-        wdata = 10'd100;
-        #PERIOD;
-        we = 0;
-        #PERIOD;
-        
-        // Write 75 to Bank 0, Reg3 (waddr = 11)
-        we = 1;
-        bank_sel = 0;
-        waddr = 2'b11;
-        wdata = 10'd75;
-        #PERIOD;
-        we = 0;
-        #PERIOD;
-        
-        // Read back from Bank 0: 
-        // Expect Reg1 = 55, Reg2 = 100, Reg3 = 75.
-        bank_sel = 0;
-        raddr1 = 2'b01;    // Read Bank0 Reg1
-        raddr2 = 2'b10;    // Read Bank0 Reg2
-        #PERIOD;
-        $display("Time %0t: Bank0: rdata1 (Reg1) = %d, rdata2 (Reg2) = %d", $time, rdata1, rdata2);
-        
-        // Change read addresses to check Reg3 as well.
-        raddr1 = 2'b11;    // Read Bank0 Reg3
-        #PERIOD;
-        $display("Time %0t: Bank0: rdata1 (Reg3) = %d (expected 75)", $time, rdata1);
-        
-        // -------- Test Bank 1: Write to multiple registers --------
-        // Write 200 to Bank 1, Reg0 (waddr = 00)
-        we = 1;
-        bank_sel = 1;      
-        waddr = 2'b00;
-        wdata = 10'd200;
-        #PERIOD;
-        we = 0;
-        #PERIOD;
-        
-        // Write 250 to Bank 1, Reg3 (waddr = 11)
-        we = 1;
-        bank_sel = 1;
-        waddr = 2'b11;
-        wdata = 10'd250;
-        #PERIOD;
-        we = 0;
-        #PERIOD;
-        
-        // Read back from Bank 1:
-        bank_sel = 1;
-        raddr1 = 2'b00;    // Expect 200 from Bank1 Reg0
-        raddr2 = 2'b11;    // Expect 250 from Bank1 Reg3
-        #PERIOD;
-        $display("Time %0t: Bank1: rdata1 (Reg0) = %d, rdata2 (Reg3) = %d", $time, rdata1, rdata2);
-        
-        // -------- Confirm Bank Isolation --------
-        // Switch back to Bank 0 and read Reg2 (should remain 100)
-        bank_sel = 0;
-        raddr1 = 2'b10;    // Bank0 Reg2
-        #PERIOD;
-        $display("Time %0t: Bank0: rdata1 (Reg2) = %d (expected 100)", $time, rdata1);
-        
-        $finish;
-    end
+    // --- Write to Bank 0 ---
+    // Write to register 0 (bank0, addr 0)
+    @(posedge clk);
+    bank_sel = 0;
+    we       = 1;
+    waddr    = 2'b00;
+    wdata    = 10'd15;     // example value
+    // Write to register 1 (bank0, addr 1)
+    @(posedge clk);
+    bank_sel = 0;
+    we       = 1;
+    waddr    = 2'b01;
+    wdata    = 10'd23;
+    // Write to register 2 (bank0, addr 2)
+    @(posedge clk);
+    bank_sel = 0;
+    we       = 1;
+    waddr    = 2'b10;
+    wdata    = 10'd37;
+    // Write to register 3 (bank0, addr 3)
+    @(posedge clk);
+    bank_sel = 0;
+    we       = 1;
+    waddr    = 2'b11;
+    wdata    = 10'd42;
+    
+    // Disable writing so that read operations can occur
+    @(posedge clk);
+    we = 0;
+    
+    // --- Read from Bank 0 ---
+    // Read registers 0 and 1 using port1 and port2 respectively.
+    @(posedge clk);
+    bank_sel = 0;
+    raddr1   = 2'b00;    // should read register 0 (value 15)
+    raddr2   = 2'b01;    // should read register 1 (value 23)
+    @(posedge clk);      // wait for synchronous read
+    $display("Time %t: Bank0 -> rdata1 (reg0) = %d, rdata2 (reg1) = %d", $time, rdata1, rdata2);
+    
+    // Read registers 2 and 3.
+    @(posedge clk);
+    raddr1   = 2'b10;    // should read register 2 (value 37)
+    raddr2   = 2'b11;    // should read register 3 (value 42)
+    @(posedge clk);
+    $display("Time %t: Bank0 -> rdata1 (reg2) = %d, rdata2 (reg3) = %d", $time, rdata1, rdata2);
+    
+    // --- Write to Bank 1 ---
+    // Write to register 0 in bank1
+    @(posedge clk);
+    bank_sel = 1;
+    we       = 1;
+    waddr    = 2'b00;
+    wdata    = 10'd7;
+    // Write to register 1 in bank1
+    @(posedge clk);
+    bank_sel = 1;
+    we       = 1;
+    waddr    = 2'b01;
+    wdata    = 10'd14;
+    // Write to register 2 in bank1
+    @(posedge clk);
+    bank_sel = 1;
+    we       = 1;
+    waddr    = 2'b10;
+    wdata    = 10'd28;
+    // Write to register 3 in bank1
+    @(posedge clk);
+    bank_sel = 1;
+    we       = 1;
+    waddr    = 2'b11;
+    wdata    = 10'd35;
+    
+    // Disable writing
+    @(posedge clk);
+    we = 0;
+    
+    // --- Read from Bank 1 ---
+    // Read registers 0 and 1.
+    @(posedge clk);
+    bank_sel = 1;
+    raddr1   = 2'b00;    // should read register 0 (value 7)
+    raddr2   = 2'b01;    // should read register 1 (value 14)
+    @(posedge clk);
+    $display("Time %t: Bank1 -> rdata1 (reg0) = %d, rdata2 (reg1) = %d", $time, rdata1, rdata2);
+    
+    // Read registers 2 and 3.
+    @(posedge clk);
+    raddr1   = 2'b10;    // should read register 2 (value 28)
+    raddr2   = 2'b11;    // should read register 3 (value 35)
+    @(posedge clk);
+    $display("Time %t: Bank1 -> rdata1 (reg2) = %d, rdata2 (reg3) = %d", $time, rdata1, rdata2);
+    
+    // --- End of Simulation ---
+    #20;
+    $finish;
+  end
+
 endmodule
+
