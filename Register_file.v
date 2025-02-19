@@ -117,12 +117,10 @@ module tb_register_file;
     .rdata2(rdata2)
   );
   
-  // Clock generation: 10 ns period (5 ns high, 5 ns low)
-  initial begin
-    clk = 0;
-    forever #5 clk = ~clk;
-  end
-  
+    parameter PERIOD = 10;
+    initial clk = 1'b0;
+    always #(PERIOD/2) clk = ~clk;
+    
   // Test sequence
   initial begin
     // --- Initialization ---
@@ -132,106 +130,104 @@ module tb_register_file;
     waddr    = 2'b00;
     wdata    = 10'b0;
     raddr1   = 2'b00;
-    raddr2   = 2'b00;
-    
-    // Let reset propagate
-    #12;
-    rst = 0;              // Deassert reset
-    
+    raddr2   = 2'b00;    
+    #PERIOD
     // --- Write to Bank 0 ---
     // Write to register 0 (bank0, addr 0)
-    @(posedge clk);
+    
+    rst = 0;              // Deassert reset
     bank_sel = 0;
     we       = 1;
     waddr    = 2'b00;
     wdata    = 10'd15;     // example value
+    #PERIOD
+
     // Write to register 1 (bank0, addr 1)
-    @(posedge clk);
-    bank_sel = 0;
-    we       = 1;
-    waddr    = 2'b01;
-    wdata    = 10'd23;
+    //@(posedge clk);
+        bank_sel = 0;
+        we       = 1;
+        waddr    = 2'b01;
+        wdata    = 10'd23;
+        #PERIOD
+
     // Write to register 2 (bank0, addr 2)
-    @(posedge clk);
+    //@(posedge clk);
     bank_sel = 0;
     we       = 1;
     waddr    = 2'b10;
     wdata    = 10'd37;
-    // Write to register 3 (bank0, addr 3)
-    @(posedge clk);
-    bank_sel = 0;
-    we       = 1;
-    waddr    = 2'b11;
-    wdata    = 10'd42;
-    
-    // Disable writing so that read operations can occur
-    @(posedge clk);
+    #PERIOD
+
+   // Write to register 3 (bank0, addr 3)
+   bank_sel = 0;
+   we       = 1;
+   waddr    = 2'b11;
+   wdata    = 10'd42;
+        #PERIOD
+        #PERIOD
+//    // Disable writing so that read operations can occur
+//    // --- Read from Bank 0 ---
+//    // Read registers 0 and 1 using port1 and port2 respectively.
+ 
     we = 0;
-    
-    // --- Read from Bank 0 ---
-    // Read registers 0 and 1 using port1 and port2 respectively.
-    @(posedge clk);
     bank_sel = 0;
     raddr1   = 2'b00;    // should read register 0 (value 15)
     raddr2   = 2'b01;    // should read register 1 (value 23)
-    @(posedge clk);      // wait for synchronous read
+    #PERIOD      // wait for synchronous read
     $display("Time %t: Bank0 -> rdata1 (reg0) = %d, rdata2 (reg1) = %d", $time, rdata1, rdata2);
+    #PERIOD
     
-    // Read registers 2 and 3.
-    @(posedge clk);
-    raddr1   = 2'b10;    // should read register 2 (value 37)
-    raddr2   = 2'b11;    // should read register 3 (value 42)
-    @(posedge clk);
-    $display("Time %t: Bank0 -> rdata1 (reg2) = %d, rdata2 (reg3) = %d", $time, rdata1, rdata2);
-    
+      // Read registers 2 and 3.
+       raddr1   = 2'b10;   // should read register 2 (value 37)
+       raddr2   = 2'b11;    // should read register 3 (value 42)
+       #PERIOD
+       $display("Time %t: Bank0 -> rdata1 (reg2) = %d, rdata2 (reg3) = %d", $time, rdata1, rdata2);
+       #PERIOD
+       
     // --- Write to Bank 1 ---
     // Write to register 0 in bank1
-    @(posedge clk);
     bank_sel = 1;
     we       = 1;
     waddr    = 2'b00;
     wdata    = 10'd7;
-    // Write to register 1 in bank1
-    @(posedge clk);
+    #PERIOD
+    
+    // Write to register 1 in bank 1
     bank_sel = 1;
     we       = 1;
     waddr    = 2'b01;
     wdata    = 10'd14;
+    #PERIOD
     // Write to register 2 in bank1
-    @(posedge clk);
     bank_sel = 1;
     we       = 1;
     waddr    = 2'b10;
     wdata    = 10'd28;
+    #PERIOD
     // Write to register 3 in bank1
-    @(posedge clk);
     bank_sel = 1;
     we       = 1;
     waddr    = 2'b11;
     wdata    = 10'd35;
-    
-    // Disable writing
-    @(posedge clk);
-    we = 0;
-    
+    #PERIOD 
+    #PERIOD
+  
     // --- Read from Bank 1 ---
-    // Read registers 0 and 1.
-    @(posedge clk);
+    // Read registers 0 and 1 
+    we = 0;
     bank_sel = 1;
     raddr1   = 2'b00;    // should read register 0 (value 7)
     raddr2   = 2'b01;    // should read register 1 (value 14)
-    @(posedge clk);
+    #PERIOD
     $display("Time %t: Bank1 -> rdata1 (reg0) = %d, rdata2 (reg1) = %d", $time, rdata1, rdata2);
-    
-    // Read registers 2 and 3.
-    @(posedge clk);
+    #PERIOD
+    // Read registers 2 and 3 
     raddr1   = 2'b10;    // should read register 2 (value 28)
     raddr2   = 2'b11;    // should read register 3 (value 35)
-    @(posedge clk);
+    #PERIOD
     $display("Time %t: Bank1 -> rdata1 (reg2) = %d, rdata2 (reg3) = %d", $time, rdata1, rdata2);
-    
-    // --- End of Simulation ---
-    #20;
+    #PERIOD
+
     $finish;
   end
 
