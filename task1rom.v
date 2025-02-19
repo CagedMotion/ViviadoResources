@@ -8,3 +8,5 @@ module task1rom(
     reg [9:0] memory[1023:0];
     
 endmodule
+
+// hi
