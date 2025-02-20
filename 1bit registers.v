@@ -12,11 +12,9 @@ module register_1bit (
             dout = din;
         end
     end
-
 endmodule
 
 module tb_1reg();
-
     wire dout;
     reg clk, reset, en;
     reg din;
@@ -32,5 +30,3 @@ module tb_1reg();
         reset = 1'b0; din = 1'b1; en = 1'b1; #PERIOD; #PERIOD;
     end
 endmodule
-
-
