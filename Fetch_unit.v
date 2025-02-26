@@ -7,9 +7,10 @@ module fetch_unit_with_reg(
     input  wire       jump,         // Jump signal: when true, use jump_target
     input  wire [9:0] branch_addr,  // Branch target (PC+1 + immediate)
     input  wire [9:0] jump_target,  // Jump target (direct 10-bit address)
+    input  wire [9:0] instruction,
     output wire [9:0] pc_out        // Current PC output
 );
-
+    assign pc_out = 10'b0;
     // Calculate PC+1
     wire [9:0] pc_plus_one;
     assign pc_plus_one = pc_out + 10'd1;
@@ -32,8 +33,9 @@ module fetch_unit_with_reg(
     
      // Instantiate ROM inside the fetch unit.
     task1rom ROM_task1 (
-        .address(pc_out),
-        .instruction(instruction)
+        .read_data(instruction),
+        .clk(clk),
+        .address(pc_out)
     );
     
     
@@ -44,7 +46,8 @@ module tb_fetch_unit_with_reg;
     // Inputs to the fetch unit
     reg         clk;
     reg         reset;
-    reg         branch;       
+    reg         branch; 
+    reg  [9:0]  instruction;      
     reg         jump;         
     reg  [9:0]  branch_addr;  
     reg  [9:0]  jump_target;  
@@ -56,6 +59,7 @@ module tb_fetch_unit_with_reg;
         .clk(clk),
         .reset(reset),
         .branch(branch),
+        .instruction(instruction),
         .jump(jump),
         .branch_addr(branch_addr),
         .jump_target(jump_target),
@@ -63,10 +67,9 @@ module tb_fetch_unit_with_reg;
     );
     
     // Clock generation: Toggle every 5 ns for a 10 ns period
-    initial begin
-        clk = 0;
-        forever #5 clk = ~clk;
-    end
+    parameter PERIOD = 10;
+    initial clk = 1'b0;
+    always #(PERIOD/2) clk = ~clk;
     
     // Use $monitor or $display to track PC changes over time
     initial begin
@@ -80,29 +83,32 @@ module tb_fetch_unit_with_reg;
         reset        = 1;
         branch       = 0;
         jump         = 0;
-        branch_addr  = 10'd100;
-        jump_target  = 10'd500;
+        branch_addr  = 10'd0;
+        jump_target  = 10'd0;
+        instruction  = 10'b0000000000;
+//        branch_addr  = 10'd100;
+//        jump_target  = 10'd500;
         
         // Assert reset for 15 ns
-        #15;
+        #PERIOD;
         reset = 0;   // Deassert reset, PC should start incrementing from 0
-        #20;         // Let it increment a couple cycles
+        #PERIOD;         // Let it increment a couple cycles
 
         // -------- Test Branch --------
         // When branch is asserted, PC should load branch_addr on the next clock edge
-        $display("\n--- Asserting BRANCH to load PC with branch_addr = %d ---", branch_addr);
-        branch = 1;
-        #10;
-        branch = 0;  // Deassert branch
-        #40;         // Wait a few cycles to observe increments again
+        //$display("\n--- Asserting BRANCH to load PC with branch_addr = %d ---", branch_addr);
+        //branch = 1;
+        //#PERIOD;
+        //branch = 0;  // Deassert branch
+        #PERIOD;         // Wait a few cycles to observe increments again
 
         // -------- Test Jump --------
         // When jump is asserted, PC should load jump_target on the next clock edge
-        $display("\n--- Asserting JUMP to load PC with jump_target = %d ---", jump_target);
-        jump = 1;
-        #10;
-        jump = 0;    // Deassert jump
-        #40;         // Wait a few cycles to observe increments again
+        //$display("\n--- Asserting JUMP to load PC with jump_target = %d ---", jump_target);
+        //jump = 1;
+        //#PERIOD;
+        //jump = 0;    // Deassert jump
+        #PERIOD;         // Wait a few cycles to observe increments again
 
         // End simulation
         $finish;

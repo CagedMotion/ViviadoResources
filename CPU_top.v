@@ -14,6 +14,7 @@ module cpu_top(
     // Fetch Unit: Produces the PC value (program counter)
     // -----------------------------------------------------
     wire [9:0] pc;
+    assign pc = 10'b0000000000;
     fetch_unit_with_reg fetch_unit (
         .clk(clk),
         .reset(reset),
