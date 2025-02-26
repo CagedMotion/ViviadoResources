@@ -8,9 +8,19 @@ module task1rom(
     reg [9:0] memory[1023:0];
     
     initial begin
-        memory[0] <= 10'b0000000001;
-        memory[1] <= 10'b0011110001;
-        memory[2] <= 10'b1010101010;
+        //store the value 5 in t0
+        memory[0] <= 10'b0110000001; //addi t0,t0,1     0000000001
+        memory[1] <= 10'b0010000001; //sll t0,t0        0000000010
+        memory[2] <= 10'b0010000001; //sll t0,t0        0000000100
+        memory[3] <= 10'b0110000001; //addi t0,t0,1     0000000101
+        //store the value 4 in t1
+        memory[4] <= 10'b0110101001; //addi t1,t1,1     0000000001
+        memory[5] <= 10'b0010101001; //sll t1,t1        0000000010
+        memory[6] <= 10'b0010101001; //sll t1,t1        0000000100
+        //add t0(5) to t1(4) and store the value in t0(9)
+        memory[7] <= 10'b0000100000; //add t0,t1        0000001001
+//        memory[1000] <= 10'b0000000101; //5
+//        memory[1001] <= 10'b0000000100; //4
     end
     
     always @(posedge clk) begin
