@@ -30,6 +30,14 @@ module fetch_unit_with_reg(
         .dout(pc_out)
     );
     
+     // Instantiate ROM inside the fetch unit.
+    task1rom ROM_task1 (
+        .address(pc_out),
+        .instruction(instruction)
+    );
+    
+    
+    
 endmodule
 
 module tb_fetch_unit_with_reg;
