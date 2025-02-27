@@ -51,7 +51,9 @@ module ALU(
         end
     endgenerate
     
-
+    
+    
+    
     // Shift Operations
     wire [9:0] slr_result;  // Shift Right Logical: A >> 1
     wire [9:0] sll_result;  // Shift Left Logical: A << 1
@@ -67,6 +69,10 @@ module ALU(
     assign slt_result = sub_result[9] ? 10'b0000000001 : 10'b0000000000;
     
     
+    wire [9:0] equal_result,temp_equal;
+    assign temp_equal = A - B;
+    nor(equal_result,temp_equal,0);
+    
     // ALU Output Multiplexer
     reg [9:0] alu_out;
     reg       halt_flag;
@@ -79,6 +85,7 @@ module ALU(
     // 3'b100: SLR       → result = A >> 1
     // 3'b101: SLL       → result = A << 1
     // 3'b110: HALT      → set halt flag, result = 0
+    // 3'b111: EQ        → result = ((A-B) nor 0)
     // default:        result = 0
     always @(*) begin
         // Default values
@@ -95,6 +102,7 @@ module ALU(
                 halt_flag = 1'b1;           // and set the halt flag.
             end
             default: alu_out = 10'b0;
+            3'b111: alu_out = equal_result;
         endcase
     end
     

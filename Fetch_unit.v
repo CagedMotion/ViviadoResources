@@ -7,10 +7,8 @@ module fetch_unit_with_reg(
     input  wire       jump,         // Jump signal: when true, use jump_target
     input  wire [9:0] branch_addr,  // Branch target (PC+1 + immediate)
     input  wire [9:0] jump_target,  // Jump target (direct 10-bit address)
-    input  wire [9:0] instruction,
     output wire [9:0] pc_out        // Current PC output
 );
-    assign pc_out = 10'b0;
     // Calculate PC+1
     wire [9:0] pc_plus_one;
     assign pc_plus_one = pc_out + 10'd1;
@@ -30,28 +28,19 @@ module fetch_unit_with_reg(
         .din(next_pc),
         .dout(pc_out)
     );
-    
-     // Instantiate ROM inside the fetch unit.
-    task1rom ROM_task1 (
-        .read_data(instruction),
-        .clk(clk),
-        .address(pc_out)
-    );
-    
-    
-    
+
 endmodule
 
 module tb_fetch_unit_with_reg;
     // Inputs to the fetch unit
     reg         clk;
     reg         reset;
-    reg         branch; 
-    reg  [9:0]  instruction;      
+    reg         branch;  
     reg         jump;         
     reg  [9:0]  branch_addr;  
     reg  [9:0]  jump_target;  
     // Output from the fetch unit
+    wire  [9:0]  instruction;     
     wire [9:0]  pc_out;
 
     // Instantiate the fetch unit under test
@@ -59,7 +48,6 @@ module tb_fetch_unit_with_reg;
         .clk(clk),
         .reset(reset),
         .branch(branch),
-        .instruction(instruction),
         .jump(jump),
         .branch_addr(branch_addr),
         .jump_target(jump_target),
@@ -85,7 +73,6 @@ module tb_fetch_unit_with_reg;
         jump         = 0;
         branch_addr  = 10'd0;
         jump_target  = 10'd0;
-        instruction  = 10'b0000000000;
 //        branch_addr  = 10'd100;
 //        jump_target  = 10'd500;
         
