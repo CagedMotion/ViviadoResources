@@ -3,6 +3,7 @@
 module fetch_unit_with_reg(
     input  wire       clk,
     input  wire       reset,
+    input  wire       halt,
     input  wire       branch,       // Branch signal: when true, use branch_addr
     input  wire       jump,         // Jump signal: when true, use jump_target
     input  wire [9:0] branch_addr,  // Branch target (PC+1 + immediate)
@@ -13,12 +14,15 @@ module fetch_unit_with_reg(
     wire [9:0] pc_plus_one;
     assign pc_plus_one = pc_out + 10'd1;
     
+    wire [9:0] pc_halt;
+    assign pc_halt = pc_out;
+    
     // Next PC selection:
     // Priority: if jump is asserted, load jump_target;
     // otherwise if branch is asserted, load branch_addr;
     // else increment PC.
     wire [9:0] next_pc;
-    assign next_pc = jump ? jump_target : (branch ? branch_addr : pc_plus_one);
+    assign next_pc = halt ? pc_halt : (jump ? jump_target : (branch ? branch_addr : pc_plus_one));
     
     // Instantiate the 10-bit register that holds the PC.
     register_10bit pc_reg (
@@ -28,7 +32,7 @@ module fetch_unit_with_reg(
         .din(next_pc),
         .dout(pc_out)
     );
-
+    
 endmodule
 
 module tb_fetch_unit_with_reg;

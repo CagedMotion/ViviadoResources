@@ -3,25 +3,32 @@
 module cpu_top(
     input  wire       clk,         // Global clock signal
     input  wire       reset,       // Global reset signal
-    input  wire       branch,      // Branch signal for the fetch unit
-    input  wire [9:0] branch_addr, // Branch address if branch is taken
+//    input  wire       branch,      // Branch signal for the fetch unit
+//    input  wire [9:0] branch_addr, // Branch address if branch is taken
     output wire [9:0] alu_result,  // ALU result (for observation)
     output wire       alu_halt,    // ALU halt flag (for observation)
-    output wire [9:0] pc_out,       // Current PC value from the fetch unit
+//    output wire [9:0] pc_out,       // Current PC value from the fetch unit
     output wire [9:0] rom_out    //rom out for reg files
 );
 
     // -----------------------------------------------------
     // Fetch Unit: Produces the PC value (program counter)
     // -----------------------------------------------------
-    reg [9:0] pc;
+    wire [9:0] pc;
+    reg branch,jump;
+    reg [9:0] branch_addr,jump_target;
+
     fetch_unit_with_reg fetch_unit (
         .clk(clk),
         .reset(reset),
+        .halt(alu_halt),
         .branch(branch),
         .branch_addr(branch_addr),
-        .pc_out(pc)
+        .pc_out(pc),
+        .jump(jump),
+        .jump_target(jump_target)
     );
+    
      // rom wires
     
     // Instantiate ROM inside the fetch unit.
@@ -32,7 +39,7 @@ module cpu_top(
     );
     
     // Expose the PC value
-    assign pc_out = pc;
+//    assign pc_out = pc;
 
     // -----------------------------------------------------
     // Register File and ALU (for example purposes)
@@ -44,6 +51,7 @@ module cpu_top(
     
     // Wires connecting the register file and ALU
     wire [9:0] rdata1, rdata2;
+    reg bank_sel;
     wire [9:0] alu_out;
     
     // ALU control signal; here, we force an ADD operation.
@@ -74,13 +82,16 @@ module cpu_top(
         .raddr1(raddr1),
         .raddr2(raddr2),
         .rdata1(rdata1),
-        .rdata2(rdata2)
+        .rdata2(rdata2),
+        .bank_sel(bank_sel)
     );
+    
+    reg [9:0]aluin_a, aluin_b;
     
     // Instantiate the ALU
     ALU alu_inst (
-        .A(rdata1),       // Operand A from register file
-        .B(rdata2),       // Operand B from register file
+        .A(aluin_a),       // Operand A from register file
+        .B(aluin_b),       // Operand B from register file
         .alu_ctrl(alu_ctrl),
         .result(alu_out),
         .halt(alu_halt)
@@ -97,32 +108,52 @@ module cpu_top(
             3'b000 : begin
                 case (instr[1:0])
                     2'b00 : begin           //add
+                        branch = 10'b0;
+                        jump = 10'b0;
+                        bank_sel = rom_out[2];
                         raddr1 = rom_out[6:5];
                         raddr2 = rom_out[4:3];
+                        aluin_a = rdata1;
+                        aluin_b = rdata2;
                         alu_ctrl = 3'b000;
                         waddr = rom_out[4:3];
                         wdata = alu_out;
                         we = 1'b1;
                     end
                     2'b01 : begin           //sub
+                        branch = 10'b0;
+                        jump = 10'b0;
+                        bank_sel = rom_out[2];
                         raddr1 = rom_out[6:5];
                         raddr2 = rom_out[4:3];
+                        aluin_a = rdata1;
+                        aluin_b = rdata2;
                         alu_ctrl = 3'b001;
                         waddr = rom_out[4:3];
                         wdata = alu_out;
                         we = 1'b1;
                     end
                     2'b10 : begin           //slt
+                        branch = 10'b0;
+                        jump = 10'b0;
+                        bank_sel = rom_out[2];
                         raddr1 = rom_out[6:5];
                         raddr2 = rom_out[4:3];
+                        aluin_a = rdata1;
+                        aluin_b = rdata2;
                         alu_ctrl = 3'b010;
                         waddr = rom_out[4:3];
                         wdata = alu_out;
                         we = 1'b1;
                     end
                     2'b11 : begin           //nand
+                        branch = 10'b0;
+                        jump = 10'b0;
+                        bank_sel = rom_out[2];
                         raddr1 = rom_out[6:5];
                         raddr2 = rom_out[4:3];
+                        aluin_a = rdata1;
+                        aluin_b = rdata2;
                         alu_ctrl = 3'b011;
                         waddr = rom_out[4:3];
                         wdata = alu_out;
@@ -133,54 +164,106 @@ module cpu_top(
             3'b001 : begin
                 case (instr[1:0])
                     2'b00 : begin           //slr
+                        branch = 10'b0;
+                        jump = 10'b0;
+                        bank_sel = rom_out[2];
                         raddr1 = rom_out[6:5];
                         raddr2 = rom_out[4:3];
+                        aluin_a = rdata1;
+                        aluin_b = rdata2;
                         alu_ctrl = 3'b100;
                         waddr = rom_out[4:3];
                         wdata = alu_out;
                         we = 1'b1;
                     end
                     2'b01 : begin           //sll
+                        branch = 10'b0;
+                        jump = 10'b0;
+                        bank_sel = rom_out[2];
                         raddr1 = rom_out[6:5];
                         raddr2 = rom_out[4:3];
+                        aluin_a = rdata1;
+                        aluin_b = rdata2;
                         alu_ctrl = 3'b101;
                         waddr = rom_out[4:3];
                         wdata = alu_out;
                         we = 1'b1;
                     end
                     2'b10 : begin           //halt
+                        branch = 10'b0;
+                        jump = 10'b0;
+                        bank_sel = rom_out[2];
                         raddr1 = rom_out[6:5];
                         raddr2 = rom_out[4:3];
+                        aluin_a = rdata1;
+                        aluin_b = rdata2;
                         alu_ctrl = 3'b110;
                         waddr = rom_out[4:3];
                         wdata = alu_out;
-                        we = 1'b1;
+                        we = 1'b0;
                     end
                     2'b11 : begin           //n/a
+                        branch = 10'b0;
+                        jump = 10'b0;
+                        bank_sel = rom_out[2];
                         raddr1 = rom_out[6:5];
                         raddr2 = rom_out[4:3];
+                        aluin_a = rdata1;
+                        aluin_b = rdata2;
                         alu_ctrl = 3'b110;
                         waddr = rom_out[4:3];
                         wdata = alu_out;
-                        we = 1'b1;
+                        we = 1'b0;
                     end
                 endcase
             end
             3'b010 : begin                  //bne
+                bank_sel = rom_out[2];
                 raddr1 = rom_out[6:5];
                 raddr2 = rom_out[4:3];
+                aluin_a = rdata1;
+                aluin_b = rdata2;
                 alu_ctrl = 3'b111;
+                we = 1'b0;
                 if (alu_out == 0) begin
-                    pc = pc + rom_out[1:0];
+                    branch_addr = {8'b0,rom_out[1:0]};
+                    jump_target = 10'b0;
+                    branch = 10'd1;
+                    jump = 10'd0;
                 end
                 else begin
-                    pc = pc;
+                    branch_addr = 10'b0;
+                    jump_target = 10'b0;
+                    branch = 10'd0;
+                    jump = 10'd0;
                 end
             end
-            3'b011 : begin
+            3'b011 : begin                  //addi
+                branch = 10'b0;
+                jump = 10'b0;
+                bank_sel = rom_out[2];
                 raddr1 = rom_out[6:5];
                 raddr2 = rom_out[4:3];
+                aluin_a = rdata1;
+                aluin_b = rom_out[1:0];
                 alu_ctrl = 3'b001;
+                waddr = rom_out[4:3];
+                wdata = alu_out;
+                we = 1'b1;
+            end
+            3'b100 : begin                  //jump
+                jump_target = pc + signe
+                branch = 10'b0;
+                jump = 10'b1;
+                bank_sel = rom_out[2];
+                raddr1 = rom_out[6:5];
+                raddr2 = rom_out[4:3];
+                aluin_a = rdata1;
+                aluin_b = rom_out[1:0];
+                alu_ctrl = 3'b001;
+                waddr = rom_out[4:3];
+                wdata = alu_out;
+                we = 1'b0;
             end
         endcase
     end
