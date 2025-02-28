@@ -22,7 +22,7 @@ module fetch_unit(
     // otherwise if branch is asserted, load branch_addr;
     // else increment PC.
     wire [9:0] next_pc;
-    assign next_pc = halted ? pc_halt : (jump ? jump_target : (branch ? branch_addr : pc_plus_one));
+    assign next_pc = (halted == 1) ? pc_halt : (jump ? jump_target : (branch ? branch_addr : pc_plus_one));
     
     // Instantiate the 10-bit register that holds the PC.
     register_10bit pc_reg (
@@ -35,24 +35,26 @@ module fetch_unit(
     
 endmodule
 
-module tb_fetch_unit_with_reg;
+module tb_fetch_unit;
     // Inputs to the fetch unit
     reg         clk;
     reg         reset;
     reg         branch;  
     reg         jump;         
     reg  [9:0]  branch_addr;  
-    reg  [9:0]  jump_target;  
+    reg  [9:0]  jump_target;
+    reg         halted;  
     // Output from the fetch unit
-    wire  [9:0]  instruction;     
+    //wire  [9:0]  instruction;     
     wire [9:0]  pc_out;
 
     // Instantiate the fetch unit under test
-    fetch_unit_with_reg dut (
+    fetch_unit dut (
         .clk(clk),
         .reset(reset),
         .branch(branch),
         .jump(jump),
+        .halted(halted),
         .branch_addr(branch_addr),
         .jump_target(jump_target),
         .pc_out(pc_out)
@@ -62,13 +64,6 @@ module tb_fetch_unit_with_reg;
     parameter PERIOD = 10;
     initial clk = 1'b0;
     always #(PERIOD/2) clk = ~clk;
-    
-    // Use $monitor or $display to track PC changes over time
-    initial begin
-        $monitor("Time=%0t | reset=%b branch=%b jump=%b | branch_addr=%d jump_target=%d | pc_out=%d",
-                 $time, reset, branch, jump, branch_addr, jump_target, pc_out);
-    end
-
     // Stimulus: test normal increments, then branch, then jump
     initial begin
         // -------- Reset Phase --------
@@ -77,6 +72,7 @@ module tb_fetch_unit_with_reg;
         jump         = 0;
         branch_addr  = 10'd0;
         jump_target  = 10'd0;
+        halted       = 1'b0;
 //        branch_addr  = 10'd100;
 //        jump_target  = 10'd500;
         
@@ -100,7 +96,8 @@ module tb_fetch_unit_with_reg;
         //#PERIOD;
         //jump = 0;    // Deassert jump
         #PERIOD;         // Wait a few cycles to observe increments again
-
+        halted       = 1'b1;
+        #PERIOD;#PERIOD;#PERIOD;#PERIOD;
         // End simulation
         $finish;
     end

@@ -53,6 +53,7 @@ module CPU10bits(
     reg  [1:0] gp_waddr;
     reg  [9:0] gp_wdata;
     reg        gp_we;
+
     
     register_file RF_inst (
         .clk       (clk),
@@ -146,7 +147,6 @@ module CPU10bits(
     // Control / Datapath Logic
     // We decode the instruction (from the ROM) and drive the datapath.
     // Once the ALU outputs a halt, we latch the halted state.
-    reg [1:0] dest_field; // Destination register field (for GP register file).
     always @(posedge clk or posedge rst) begin
         if (rst) begin
             branch_sig      <= 1'b0;
@@ -159,7 +159,6 @@ module CPU10bits(
             alu_ctrl        <= 3'b000;
             alu_inA         <= 10'd0;
             alu_inB         <= 10'd0;
-            dest_field      <= 2'b00;
             gp_wdata        <= 10'd0;
             gp_waddr        <= 2'b00;
             
@@ -176,12 +175,11 @@ module CPU10bits(
             alu_ctrl        <= 3'b000;
             alu_inA         <= 10'd0;
             alu_inB         <= 10'd0;
-            dest_field      <= rt_field;
             gp_wdata        <= 10'd0;
             ram_we          <= 1'b0;
             ram_addr        <= 10'd0;
             ram_wdata       <= 10'd0;
-            gp_waddr        <= dest_field;
+            gp_waddr        <= gp_waddr;
             
             if (halted_reg) begin
                 // CPU remains halted.
@@ -189,6 +187,8 @@ module CPU10bits(
                 case (opcode)
                     // 000: R-type arithmetic: ADD, SUB, SLT, NAND.
                     3'b000: begin
+                        alu_inA     <= gp_rdata1;
+                        alu_inB     <= gp_rdata2;
                         case (fimm)
                             2'b00: alu_ctrl <= 3'b000; // ADD
                             2'b01: alu_ctrl <= 3'b001; // SUB
@@ -197,23 +197,24 @@ module CPU10bits(
                         endcase
                         gp_we       <= 1'b1;
                         gp_wdata    <= alu_result;
-                        dest_field  <= rt_field;
+                        gp_waddr  <= rt_field;
                     end
                     // 001: R-type shift or HALT.
                     // func/imm: 00 = SLR, 01 = SLL, 10 = HALT.
                     3'b001: begin
+                        alu_inA  <= gp_rdata1;
                         case (fimm)
-                            2'b00: begin
+                          2'b00: begin
                                 alu_ctrl <= 3'b100; // SLR
                                 gp_we    <= 1'b1;
                                 gp_wdata <= alu_result;
-                                dest_field <= rt_field;
+                                gp_waddr <= rt_field;
                             end
                             2'b01: begin
                                 alu_ctrl <= 3'b101; // SLL
                                 gp_we    <= 1'b1;
                                 gp_wdata <= alu_result;
-                                dest_field <= rt_field;
+                                gp_waddr <= rt_field;
                             end
                             2'b10: begin
                                 alu_ctrl <= 3'b110; // HALT
@@ -229,11 +230,12 @@ module CPU10bits(
                     end
                     // 011: ADDI - add immediate to gp_rdata1.
                     3'b011: begin
+                        alu_inA   <= gp_rdata1;
                         alu_inB   <= sign_extend_imm(fimm);
                         alu_ctrl  <= 3'b000; // ADD.
                         gp_we     <= 1'b1;
                         gp_wdata  <= alu_result;
-                        dest_field<= rt_field;
+                        gp_waddr  <= rt_field;
                     end
                     // 100: JUMP.
                     3'b100: begin
@@ -248,15 +250,17 @@ module CPU10bits(
                     end
                     // 110: LOAD.
                     3'b110: begin
+                        alu_inA  <= gp_rdata1;
                         alu_inB   <= sign_extend_imm(fimm);
                         alu_ctrl  <= 3'b000; // Compute effective address.
                         ram_addr  <= alu_result;
                         gp_we     <= 1'b1;
                         gp_wdata  <= ram_rdata;
-                        dest_field<= rt_field;
+                        gp_waddr  <= rt_field;
                     end
                     // 111: STORE.
                     3'b111: begin
+                        alu_inA  <= gp_rdata1;
                         alu_inB   <= sign_extend_imm(fimm);
                         alu_ctrl  <= 3'b000; // Compute effective address.
                         ram_addr  <= alu_result;
@@ -303,6 +307,7 @@ endmodule
 module tb_cpu10bits;
     reg clk;
     reg rst;
+    wire halted;
     
     // Instantiate the CPU10bits top module.
     CPU10bits dut (
@@ -312,17 +317,21 @@ module tb_cpu10bits;
     );
     
     parameter PERIOD = 10;
-    initial clk = 1'b0;
+    initial clk = 1'b1;
     always #(PERIOD/2) clk = ~clk;
     
     initial begin
+        //halted = 1;
         rst = 1;
         #PERIOD;
         rst = 0;
-        // Optionally, drive any test stimulus here.
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
         #PERIOD;
+        //halted = 0;
+        
+        // Optionally, drive any test stimulus here.
+        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;//#PERIOD;
+//        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
+//        #PERIOD;
         
         $finish;
     end
