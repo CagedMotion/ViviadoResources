@@ -320,13 +320,10 @@ module tb_cpu10bits;
         #PERIOD;
         rst = 0;
         // Optionally, drive any test stimulus here.
+        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
+        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
         #PERIOD;
-        #PERIOD;
-        #PERIOD;
-        #PERIOD;
-        #PERIOD;
-        #PERIOD;
-        #PERIOD;
+        
         $finish;
     end
 endmodule

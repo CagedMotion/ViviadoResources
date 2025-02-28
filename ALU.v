@@ -42,7 +42,10 @@ module ALU(
         .cout(sub_cout)
     );
     
-
+    wire   unused_add_cout, unused_sub_cout;
+    assign unused_add_cout = add_cout;
+    assign unused_sub_cout = sub_cout;
+    
     // NAND Operation (bitwise NAND of A and B)
     wire [9:0] nand_result;
     generate
@@ -71,7 +74,7 @@ module ALU(
     
     wire [9:0] equal_result,temp_equal;
     assign temp_equal = A - B;
-    assign equal_result = ~(equal_result | temp_equal);
+    assign equal_result = ~(10'b0 | temp_equal);
 
     
     // ALU Output Multiplexer
