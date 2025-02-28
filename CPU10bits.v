@@ -275,9 +275,7 @@ module CPU10bits(
         end
     end
 
-    //------------------------------------------------------
     // Immediate Extension Functions
-    //------------------------------------------------------
     function [9:0] sign_extend_imm;
         input [1:0] imm;
         begin
