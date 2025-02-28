@@ -1,9 +1,9 @@
 `timescale 1 ns/1 ps
 
-module fetch_unit_with_reg(
+module fetch_unit(
     input  wire       clk,
     input  wire       reset,
-    input  wire       halt,
+    input  wire       halted,
     input  wire       branch,       // Branch signal: when true, use branch_addr
     input  wire       jump,         // Jump signal: when true, use jump_target
     input  wire [9:0] branch_addr,  // Branch target (PC+1 + immediate)
@@ -22,7 +22,7 @@ module fetch_unit_with_reg(
     // otherwise if branch is asserted, load branch_addr;
     // else increment PC.
     wire [9:0] next_pc;
-    assign next_pc = halt ? pc_halt : (jump ? jump_target : (branch ? branch_addr : pc_plus_one));
+    assign next_pc = halted ? pc_halt : (jump ? jump_target : (branch ? branch_addr : pc_plus_one));
     
     // Instantiate the 10-bit register that holds the PC.
     register_10bit pc_reg (

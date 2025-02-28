@@ -71,7 +71,8 @@ module ALU(
     
     wire [9:0] equal_result,temp_equal;
     assign temp_equal = A - B;
-    nor(equal_result,temp_equal,0);
+    assign equal_result = ~(equal_result | temp_equal);
+
     
     // ALU Output Multiplexer
     reg [9:0] alu_out;
@@ -101,8 +102,8 @@ module ALU(
                 alu_out   = 10'b0;          // For HALT, drive result low
                 halt_flag = 1'b1;           // and set the halt flag.
             end
-            default: alu_out = 10'b0;
             3'b111: alu_out = equal_result;
+            default: alu_out = 10'b0;
         endcase
     end
     
