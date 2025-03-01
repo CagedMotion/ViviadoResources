@@ -6,292 +6,277 @@ module CPU10bits(
     output wire cpu_halted  // Indicates that the CPU has halted.
 );
 
-    // PC & Fetch Unit
-    wire [9:0] pc_val;
-    reg         branch_sig;
-    reg         jump_sig;
-    reg  [9:0]  branch_target;
-    reg  [9:0]  jump_target;
+    //-------------------------------------------------------------------------
+    // 1) PC & Fetch Unit Signals
+    //-------------------------------------------------------------------------
+    wire [9:0] pc;  // PC output from fetch unit
+    reg        branch_sig;
+    reg        jump_sig;
+    reg [9:0]  branch_target;
+    reg [9:0]  jump_target;
     
-    // Latch for halted state.
+    // Halt signal for the fetch unit
     reg halted_reg;
+    reg next_halt;
     assign cpu_halted = halted_reg;
-    
-    // Instantiate the fetch unit (from Fetch_unit.v)
-    fetch_unit FU_inst (
-        .clk         (clk),
-        .reset       (rst),
-        .branch      (branch_sig),
-        .jump        (jump_sig),
-        .halted      (halted_reg),  // When true, the PC is frozen.
-        .branch_addr (branch_target),
-        .jump_target (jump_target),
-        .pc_out      (pc_val)
-    );
-    
-    // ROM (Task1 ROM from task1rom.v)
-    wire [9:0] instr;
-    task1rom ROM_inst (
-        .address   (pc_val),
-        .clk       (clk),
-        .read_data (instr)
-    );
-    
-    // Instruction Decode
-    // Instruction format: [9:7] opcode, [6:5] rs, [4:3] rt, [2] bank_sel, [1:0] func/imm.
-    wire [2:0] opcode    = instr[9:7];
-    wire [1:0] rs_field  = instr[6:5];
-    wire [1:0] rt_field  = instr[4:3];
-    wire       bank_sel  = instr[2];    // This drives the GP register file.
-    wire [1:0] fimm      = instr[1:0];   // For R-type functions or I-type immediate.
-    wire [6:0] jmp_addr  = instr[6:0];   // For J-type instructions.
-    
-    // General-Purpose Register File (from Register_file.v)
-    // The register file uses a separate 1-bit bank_sel along with 2-bit read/write addresses.
-    wire [9:0] gp_rdata1;
-    wire [9:0] gp_rdata2;
-    reg  [1:0] gp_waddr;
-    reg  [9:0] gp_wdata;
-    reg        gp_we;
 
-    
-    register_file RF_inst (
-        .clk       (clk),
-        .rst       (rst),
-        .bank_sel  (bank_sel),
-        .raddr1    (rs_field),
-        .raddr2    (rt_field),
-        .waddr     (gp_waddr),
-        .wdata     (gp_wdata),
-        .we        (gp_we),
-        .rdata1    (gp_rdata1),
-        .rdata2    (gp_rdata2)
+    //-------------------------------------------------------------------------
+    // 2) Instantiate the Fetch Unit
+    //    The fetch unit uses branch, jump, branch_target, and jump_target
+    //    to compute the next PC. When none of these are asserted, it simply
+    //    increments PC by one.
+    //-------------------------------------------------------------------------
+    fetch_unit FU_inst (
+        .clk(clk),
+        .reset(rst),
+        .halted(halted_reg),
+        .branch(branch_sig),
+        .jump(jump_sig),
+        .branch_addr(branch_target),
+        .jump_target(jump_target),
+        .pc_out(pc)
     );
-    
-//    // Special-Purpose Registers
-//    // Zero Register (always outputs zero) - from zero_register.v.
-//    wire [9:0] zero_val;
-//    register_zero ZREG_inst (
-//        .clk   (clk),
-//        .reset (rst),
-//        .en    (1'b1),      // Always enabled.
-//        .din   (10'd0),     // Always 0.
-//        .dout  (zero_val)
+
+    //-------------------------------------------------------------------------
+    // 3) Instruction Memory (ROM)
+    //    Use the PC from the fetch unit to index into ROM.
+    //-------------------------------------------------------------------------
+    wire [9:0] instr;
+//    task1rom ROM_inst (
+//        .address(pc),
+//        .clk(clk),           // clk not strictly required if ROM is asynchronous
+//        .read_data(instr)
 //    );
-    
-    // Stack Pointer Register (from Register_sp.v).
-    // It is initialized to 10'h3FF and updated by push/pop operations.
-//    reg        sp_we;
-//    reg  [9:0] sp_din;
-//    wire [9:0] sp_val;
-//    register_sp SP_inst (
-//        .clk   (clk),
-//        .reset (rst),
-//        .en    (sp_we),
-//        .din   (sp_din),
-//        .dout  (sp_val)
-//    );
-    
-    // Simple update for the stack pointer.
-    // (Replace the conditions with your actual push/pop control.)
-//    always @(posedge clk or posedge rst) begin
-//        if (rst) begin
-//            sp_we  <= 1'b1;
-//            sp_din <= 10'h3FF;  // Initialize SP to top of RAM.
-//        end else begin
-//            sp_we  <= 1'b0;
-//            sp_din <= sp_val;
-//            // Example conditions (currently disabled):
-//            if (/* push condition */ 1'b0) begin
-//                sp_we  <= 1'b1;
-//                sp_din <= sp_val - 10'd1;
-//            end else if (/* pop condition */ 1'b0) begin
-//                sp_we  <= 1'b1;
-//                sp_din <= sp_val + 10'd1;
-//            end
-//        end
-//    end
-    
-    // ALU
-    // The ALU takes two 10-bit inputs and a 3-bit control signal.
-    // Its halt output is used to freeze the CPU.
-    reg  [9:0] alu_inA;
-    reg  [9:0] alu_inB;
-    reg  [2:0] alu_ctrl;
-    wire [9:0] alu_result;
-    wire       alu_halt;
-    
-    ALU ALU_inst (
-        .A         (alu_inA),
-        .B         (alu_inB),
-        .alu_ctrl  (alu_ctrl),
-        .result    (alu_result),
-        .halt      (alu_halt)
+
+    task2rom ROM_inst (
+        .address(pc),
+        .clk(clk),           // clk not strictly required if ROM is asynchronous
+        .read_data(instr)
     );
-    
-    // RAM (from ram.v)
-    // Implements a 1024×10-bit memory.
-    reg        ram_we;
+
+//    task3rom ROM_inst (
+//        .address(pc),
+//        .clk(clk),           // clk not strictly required if ROM is asynchronous
+//        .read_data(instr)
+//    );
+
+    //-------------------------------------------------------------------------
+    // 4) Data Memory (Asynchronous Read, Synchronous Write)
+    //-------------------------------------------------------------------------
     reg  [9:0] ram_addr;
     reg  [9:0] ram_wdata;
+    reg        ram_we;
     wire [9:0] ram_rdata;
-    
-    ram RAM_inst (
-        .clk     (clk),
-        .we      (ram_we),
-        .address (ram_addr),
-        .wdata   (ram_wdata),
-        .rdata   (ram_rdata)
+//    ramtask1 RAM_inst (
+//        .clk(clk),
+//        .we(ram_we),
+//        .address(ram_addr),
+//        .wdata(ram_wdata),
+//        .rdata(ram_rdata)
+//    );
+    ramtask2 RAM_inst (
+        .clk(clk),
+        .we(ram_we),
+        .address(ram_addr),
+        .wdata(ram_wdata),
+        .rdata(ram_rdata)
     );
-    
-    // Control / Datapath Logic
-    // We decode the instruction (from the ROM) and drive the datapath.
-    // Once the ALU outputs a halt, we latch the halted state.
+//    ramtask3 RAM_inst (
+//        .clk(clk),
+//        .we(ram_we),
+//        .address(ram_addr),
+//        .wdata(ram_wdata),
+//        .rdata(ram_rdata)
+//    );
+    //-------------------------------------------------------------------------
+    // 6) Instruction Decode
+    //    According to your ISA:
+    //      [9:7] opcode, [6:5] rs, [4:3] rt, [2] bank_sel, [1:0] func/imm.
+    //    (Swap fields if needed to match your actual machine code.)
+    //-------------------------------------------------------------------------
+    wire [2:0] opcode   = instr[9:7];
+    wire [1:0] rs_field = instr[6:5];
+    wire [1:0] rt_field = instr[4:3];
+    wire       bank_sel = instr[2];
+    wire [1:0] fimm     = instr[1:0];
+    wire [6:0] jmp_addr = instr[6:0];
+
+    //-------------------------------------------------------------------------
+    // 5) Register File (Async Read, Sync Write)
+    //-------------------------------------------------------------------------
+    reg  [1:0] gp_reg_waddr;
+    reg  [9:0] gp_reg_wdata;
+    reg        gp_reg_we;
+    reg        gp_reg_bank_sel;
+    wire [9:0] gp_rdata1, gp_rdata2;
+    register_file RF_inst (
+        .clk(clk),
+        .rst(rst),
+        .we(gp_reg_we),
+        .bank_sel(gp_reg_bank_sel),
+        .waddr(gp_reg_waddr),
+        .wdata(gp_reg_wdata),
+        .raddr1(rs_field),
+        .raddr2(rt_field),
+        .rdata1(gp_rdata1),
+        .rdata2(gp_rdata2)
+    );
+
+    //-------------------------------------------------------------------------
+    // 7) ALU Instantiation
+    //-------------------------------------------------------------------------
+    reg  [9:0] alu_inA, alu_inB;
+    wire [9:0] alu_result;
+    wire       alu_halt;
+    reg  [2:0] alu_ctrl;
+    ALU ALU_inst (
+        .A(alu_inA),
+        .B(alu_inB),
+        .alu_ctrl(alu_ctrl),
+        .result(alu_result),
+        .halt(alu_halt)
+    );
+
+    //-------------------------------------------------------------------------
+    // 8) Sequential State: Halt Signal (PC update is handled in fetch_unit)
+    //-------------------------------------------------------------------------
     always @(posedge clk or posedge rst) begin
         if (rst) begin
-            branch_sig      <= 1'b0;
-            jump_sig        <= 1'b0;
-            branch_target   <= 10'd0;
-            jump_target     <= 10'd0;
-            halted_reg      <= 1'b0;
-            
-            gp_we           <= 1'b0;
-            alu_ctrl        <= 3'b000;
-            alu_inA         <= 10'd0;
-            alu_inB         <= 10'd0;
-            gp_wdata        <= 10'd0;
-            gp_waddr        <= 2'b00;
-            
-            ram_we          <= 1'b0;
-            ram_addr        <= 10'd0;
-            ram_wdata       <= 10'd0;
+            halted_reg <= 1'b0;
         end else begin
-            // Default assignments each cycle:
-            branch_sig      <= 1'b0;
-            jump_sig        <= 1'b0;
-            branch_target   <= pc_val + 10'd1;
-            jump_target     <= pc_val;
-            gp_we           <= 1'b0;
-            alu_ctrl        <= 3'b000;
-            alu_inA         <= 10'd0;
-            alu_inB         <= 10'd0;
-            gp_wdata        <= 10'd0;
-            ram_we          <= 1'b0;
-            ram_addr        <= 10'd0;
-            ram_wdata       <= 10'd0;
-            gp_waddr        <= rt_field;
-            
-            if (halted_reg) begin
-                // CPU remains halted.
-            end else begin
-                case (opcode)
-                    // 000: R-type arithmetic: ADD, SUB, SLT, NAND.
-                    3'b000: begin
-                        alu_inA     <= gp_rdata1;
-                        alu_inB     <= gp_rdata2;
-                        case (fimm)
-                            2'b00: alu_ctrl <= 3'b000; // ADD
-                            2'b01: alu_ctrl <= 3'b001; // SUB
-                            2'b10: alu_ctrl <= 3'b010; // SLT
-                            2'b11: alu_ctrl <= 3'b011; // NAND
-                        endcase
-                        gp_we       <= 1'b1;
-                        gp_wdata    <= alu_result;
-                        gp_waddr  <= rt_field;
-                    end
-                    // 001: R-type shift or HALT.
-                    // func/imm: 00 = SLR, 01 = SLL, 10 = HALT.
-                    3'b001: begin
-                        alu_inA  <= gp_rdata1;
-                        alu_inB  <= gp_rdata2;
-                        case (fimm)
-                          2'b00: begin
-                                alu_ctrl <= 3'b100; // SLR
-                                gp_we    <= 1'b1;
-                                gp_wdata <= alu_result;
-                                gp_waddr <= rt_field;
-                            end
-                            2'b01: begin
-
-                                alu_ctrl <= 3'b101; // SLL
-                                gp_we    <= 1'b1;
-                                gp_wdata <= alu_result;
-                                gp_waddr <= rt_field;
-                            end
-                            2'b10: begin
-                                alu_ctrl <= 3'b110; // HALT
-                            end
-                        endcase
-                    end
-                    // 010: BNE - branch if gp_rdata1 != gp_rdata2.
-                    3'b010: begin
-                        if (gp_rdata1 != gp_rdata2)
-                            branch_target <= pc_val + zero_extend_imm(fimm);
-                        branch_sig <= 1'b1;
-                    end
-                    // 011: ADDI - add immediate to gp_rdata1.
-                    3'b011: begin
-                        alu_inA   <= gp_rdata1;
-                        alu_inB   <= zero_extend_imm(fimm);
-                        alu_ctrl  <= 3'b000; // ADD.
-                        gp_we     <= 1'b1;
-                        gp_wdata  <= alu_result;
-                        gp_waddr  <= rt_field;
-                    end
-                    // 100: JUMP.
-                    3'b100: begin
-                        jump_target <= sign_extend_jmp(jmp_addr);
-                        jump_sig    <= 1'b1;
-                    end
-                    // 101: BEQ - branch if gp_rdata1 == gp_rdata2.
-                    3'b101: begin
-                        if (gp_rdata1 == gp_rdata2)
-                            branch_target <= pc_val + zero_extend_imm(fimm);
-                        branch_sig <= 1'b1;
-                    end
-                    // 110: LOAD.
-                    3'b110: begin
-                        alu_inA  <= gp_rdata1;
-                        alu_inB   <= sign_extend_imm(fimm);
-                        alu_ctrl  <= 3'b000; // Compute effective address.
-                        ram_addr  <= alu_result;
-                        gp_we     <= 1'b1;
-                        gp_wdata  <= ram_rdata;
-                        gp_waddr  <= rt_field;
-                    end
-                    // 111: STORE.
-                    3'b111: begin
-                        alu_inA  <= gp_rdata1;
-                        alu_inB   <= sign_extend_imm(fimm);
-                        alu_ctrl  <= 3'b000; // Compute effective address.
-                        ram_addr  <= alu_result;
-                        ram_we    <= 1'b1;
-                        ram_wdata <= gp_rdata2;
-                    end
-                    default: begin
-                        alu_ctrl <= 3'b000;
-                        alu_inB  <= 10'd0;
-                    end
-                endcase
-                // Latch halt state if ALU signals halt.
-                if (alu_halt)
-                    halted_reg <= 1'b1;
-            end
+            if (alu_halt)
+                halted_reg <= 1'b1;
         end
     end
 
-    // Immediate Extension Functions
+    //-------------------------------------------------------------------------
+    // 9) COMBINATIONAL Logic: Decoding, ALU, and Control Signal Generation
+    //     * NOTE: We now remove any direct computation of next_pc.
+    //     * Instead, we drive branch_sig, jump_sig, branch_target, and jump_target.
+    //-------------------------------------------------------------------------
+    always @(*) begin
+        // Default control signals
+        branch_sig       = 1'b0;
+        jump_sig         = 1'b0;
+        branch_target    = 10'd0;
+        jump_target      = 10'd0;
+        
+        // Default register file signals
+        gp_reg_we      = 1'b0;
+        gp_reg_wdata   = 10'd0;
+        gp_reg_waddr   = rt_field;      // By convention, destination is rt
+        gp_reg_bank_sel = bank_sel;
+        
+        // Default RAM signals
+        ram_we         = 1'b0;
+        ram_addr       = 10'd0;
+        ram_wdata      = 10'd0;
+        
+        // Default ALU signals
+        alu_inA        = gp_rdata1;     // Read base from rs
+        alu_inB        = gp_rdata2;     // Read second operand from rt
+        alu_ctrl       = 3'b000;
+
+        case (opcode)
+            // 000: R-type arithmetic: ADD, SUB, SLT, NAND.
+            3'b000: begin
+                case (fimm)
+                    2'b00: alu_ctrl = 3'b000; // ADD
+                    2'b01: alu_ctrl = 3'b001; // SUB
+                    2'b10: alu_ctrl = 3'b010; // SLT
+                    2'b11: alu_ctrl = 3'b011; // NAND
+                endcase
+                gp_reg_we    = 1'b1;
+                gp_reg_wdata = alu_result;
+            end
+
+            // 001: SHIFT or HALT.
+            3'b001: begin
+                case (fimm)
+                    2'b00: alu_ctrl = 3'b100; // SLR
+                    2'b01: alu_ctrl = 3'b101; // SLL
+                    2'b10: alu_ctrl = 3'b110; // HALT
+                    default: alu_ctrl = 3'b000;
+                endcase
+                if (fimm == 2'b10)
+                    ; // Let alu_halt drive halt
+                else begin
+                    gp_reg_we    = 1'b1;
+                    gp_reg_wdata = alu_result;
+                end
+            end
+
+            // 010: BNE: Branch if not equal.
+            3'b010: begin
+                if (alu_inA != alu_inB) begin
+                    branch_sig    = 1'b1;
+                    branch_target = pc + zero_extend_imm(fimm);  // Branch relative to current PC
+                end
+            end
+
+            // 011: ADDI: Immediate addition.
+            3'b011: begin
+                alu_ctrl  = 3'b000;  // ADD
+                alu_inB   = zero_extend_imm(fimm);
+                gp_reg_we    = 1'b1;
+                gp_reg_wdata = alu_result;
+            end
+
+            // 100: JUMP.
+            3'b100: begin
+                jump_sig    = 1'b1;
+                jump_target = sign_extend_jmp(jmp_addr);
+            end
+
+            // 101: BEQ: Branch if equal.
+            3'b101: begin
+                if (alu_inA == alu_inB) begin
+                    branch_sig    = 1'b1;
+                    branch_target = pc + zero_extend_imm(fimm);
+                end
+            end
+
+            // 110: LOAD.
+            3'b110: begin
+                alu_ctrl = 3'b000;            // Compute effective address: base + offset.
+                alu_inB  = sign_extend_imm(fimm);
+                // Use ALU result as RAM address.
+                ram_addr = alu_result;
+                // Asynchronous read from RAM is valid in the same cycle.
+                gp_reg_we    = 1'b1;
+                gp_reg_wdata = ram_rdata;
+            end
+
+            // 111: STORE.
+            3'b111: begin
+                alu_ctrl = 3'b000;            // Compute effective address.
+                alu_inB  = sign_extend_imm(fimm);
+                ram_addr = alu_result;
+                // Write the data from the rt register.
+                ram_wdata = gp_rdata2;
+                ram_we    = 1'b1;
+            end
+        endcase
+
+        // If the ALU asserts halt, we also set next_halt.
+        if (alu_halt)
+            next_halt = 1'b1;
+    end
+
+    //-----------------------------------
+    // Helper Functions for Immediate Extension
+    //-----------------------------------
+    function [9:0] zero_extend_imm;
+        input [1:0] imm;
+        begin
+            zero_extend_imm = {8'b0, imm};
+        end
+    endfunction
+
     function [9:0] sign_extend_imm;
         input [1:0] imm;
         begin
             sign_extend_imm = {{8{imm[1]}}, imm};
-        end
-    endfunction
-
-    function [9:0] zero_extend_imm;
-        input [1:0] imm;
-        begin
-            zero_extend_imm = {8'd0, imm};
         end
     endfunction
 
@@ -303,6 +288,7 @@ module CPU10bits(
     endfunction
 
 endmodule
+
 
 // Testbench for CPU10bits
 module tb_cpu10bits;
@@ -332,8 +318,11 @@ module tb_cpu10bits;
         #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
         #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
         #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-//        #PERIOD;
+//        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
+//        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
+//        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
+//        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
+//        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
         
         $finish;
     end
