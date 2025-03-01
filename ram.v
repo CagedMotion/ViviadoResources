@@ -1,23 +1,26 @@
 `timescale 1ns / 1ps
 
 module ram(
-    output wire [9:0] rdata,
-    input wire clk, we,
-    input wire [9:0] address,
-    input wire [9:0] wdata
-    );
-    reg [9:0] ram[1023:0];
-    reg [9:0] address_reg;    // Address register
+    output wire [9:0] rdata,   // 10-bit data output
+    input  wire       clk,     // Clock signal
+    input  wire       we,      // Write enable
+    input  wire [9:0] address, // 10-bit address input
+    input  wire [9:0] wdata    // 10-bit write data
+);
 
-    always @ (posedge clk)
-    begin
+    // Memory array: 1024 entries of 10 bits each.
+    reg [9:0] ram[1023:0];
+
+    // Asynchronous read: rdata immediately reflects the memory content at "address"
+    assign rdata = ram[address];
+
+    // Synchronous write: On the rising edge, if "we" is asserted,
+    // write "wdata" into the memory at the given "address".
+    always @(posedge clk) begin
         if (we)
             ram[address] <= wdata;
-        else
-            address_reg <= address;
     end
 
-    assign rdata = ram[address_reg];
 endmodule
 
 module tb_ram();

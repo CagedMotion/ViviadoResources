@@ -326,7 +326,6 @@ module tb_cpu10bits;
         rst = 1;
         #PERIOD;
         rst = 0;
-        #PERIOD;
         //halted = 0;
         
         // Optionally, drive any test stimulus here.
