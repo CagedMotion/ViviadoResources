@@ -179,7 +179,7 @@ module CPU10bits(
             ram_we          <= 1'b0;
             ram_addr        <= 10'd0;
             ram_wdata       <= 10'd0;
-            gp_waddr        <= gp_waddr;
+            gp_waddr        <= rt_field;
             
             if (halted_reg) begin
                 // CPU remains halted.
@@ -203,6 +203,7 @@ module CPU10bits(
                     // func/imm: 00 = SLR, 01 = SLL, 10 = HALT.
                     3'b001: begin
                         alu_inA  <= gp_rdata1;
+                        alu_inB  <= gp_rdata2;
                         case (fimm)
                           2'b00: begin
                                 alu_ctrl <= 3'b100; // SLR
@@ -211,6 +212,7 @@ module CPU10bits(
                                 gp_waddr <= rt_field;
                             end
                             2'b01: begin
+
                                 alu_ctrl <= 3'b101; // SLL
                                 gp_we    <= 1'b1;
                                 gp_wdata <= alu_result;
@@ -218,20 +220,19 @@ module CPU10bits(
                             end
                             2'b10: begin
                                 alu_ctrl <= 3'b110; // HALT
-                                // No register write.
                             end
                         endcase
                     end
                     // 010: BNE - branch if gp_rdata1 != gp_rdata2.
                     3'b010: begin
                         if (gp_rdata1 != gp_rdata2)
-                            branch_target <= pc_val + sign_extend_imm(fimm);
+                            branch_target <= pc_val + zero_extend_imm(fimm);
                         branch_sig <= 1'b1;
                     end
                     // 011: ADDI - add immediate to gp_rdata1.
                     3'b011: begin
                         alu_inA   <= gp_rdata1;
-                        alu_inB   <= sign_extend_imm(fimm);
+                        alu_inB   <= zero_extend_imm(fimm);
                         alu_ctrl  <= 3'b000; // ADD.
                         gp_we     <= 1'b1;
                         gp_wdata  <= alu_result;
@@ -307,7 +308,7 @@ endmodule
 module tb_cpu10bits;
     reg clk;
     reg rst;
-    wire halted;
+    //wire halted;
     
     // Instantiate the CPU10bits top module.
     CPU10bits dut (
@@ -329,8 +330,10 @@ module tb_cpu10bits;
         //halted = 0;
         
         // Optionally, drive any test stimulus here.
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;//#PERIOD;
-//        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
+        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
+        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
+        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
+        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
 //        #PERIOD;
         
         $finish;

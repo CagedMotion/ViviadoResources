@@ -29,7 +29,7 @@ module register_file(
     
     // Two banks, each with 4 registers of 10 bits
     wire [2:0] write_selector;
-    wire [3:0] read_selector0, read_selector1;
+    wire [2:0] read_selector0, read_selector1;
     assign write_selector = {bank_sel,waddr[1:0]};
     assign read_selector0 = {bank_sel, raddr1[1:0]};
     assign read_selector1 = {bank_sel,raddr2[1:0]};
@@ -37,51 +37,51 @@ module register_file(
     // Synchronous reset and write operation.
     // On reset, clear both banks.
     // On a write, update the register in the selected bank.
+     // Synchronous write block.
     always @(posedge clk) begin
-        if (rst == 1'b1) begin
-           w1 <= 10'b0;
-           w2 <= 10'b0;
-           w3 <= 10'b0;
-           w4 <= 10'b0;
-           w5 <= 10'b0;
-           w6 <= 10'b0;
-           w7 <= 10'b0;
-           w8 <= 10'b0;
-           rdata1 <= 10'b0;
-           rdata2 <= 10'b0; 
-        end else if (we == 1'b1) begin
+        if (rst) begin
+            w1 <= 10'b0;  w2 <= 10'b0;  w3 <= 10'b0;  w4 <= 10'b0;
+            w5 <= 10'b0;  w6 <= 10'b0;  w7 <= 10'b0;  w8 <= 10'b0;
+        end else if (we) begin
             case(write_selector)     
-               3'b000 : w1 <= wdata;
-               3'b001 : w2 <= wdata;
-               3'b010 : w3 <= wdata;
-               3'b011 : w4 <= wdata;
-               3'b100 : w5 <= wdata;
-               3'b101 : w6 <= wdata;
-               3'b110 : w7 <= wdata;
-               3'b111 : w8 <= wdata;
+                3'b000: w1 <= wdata;
+                3'b001: w2 <= wdata;
+                3'b010: w3 <= wdata;
+                3'b011: w4 <= wdata;
+                3'b100: w5 <= wdata;
+                3'b101: w6 <= wdata;
+                3'b110: w7 <= wdata;
+                3'b111: w8 <= wdata;
             endcase                  
-        end else begin
-            case(read_selector0)
-                3'b000 : rdata1 <= r1;
-                3'b001 : rdata1 <= r2;
-                3'b010 : rdata1 <= r3;
-                3'b011 : rdata1 <= r4;
-                3'b100 : rdata1 <= r5;
-                3'b101 : rdata1 <= r6;
-                3'b110 : rdata1 <= r7;
-                3'b111 : rdata1 <= r8;
-            endcase
-            case(read_selector1)
-                3'b000 : rdata2 <= r1;
-                3'b001 : rdata2 <= r2;
-                3'b010 : rdata2 <= r3;
-                3'b011 : rdata2 <= r4;
-                3'b100 : rdata2 <= r5;
-                3'b101 : rdata2 <= r6;
-                3'b110 : rdata2 <= r7;
-                3'b111 : rdata2 <= r8;
-            endcase 
         end
+    end
+    // Combinational read blocks.
+    always @(*) begin
+        case(read_selector0)
+            3'b000: rdata1 = r1;
+            3'b001: rdata1 = r2;
+            3'b010: rdata1 = r3;
+            3'b011: rdata1 = r4;
+            3'b100: rdata1 = r5;
+            3'b101: rdata1 = r6;
+            3'b110: rdata1 = r7;
+            3'b111: rdata1 = r8;
+            default: rdata1 = 10'd0;
+        endcase
+    end
+
+    always @(*) begin
+        case(read_selector1)
+            3'b000: rdata2 = r1;
+            3'b001: rdata2 = r2;
+            3'b010: rdata2 = r3;
+            3'b011: rdata2 = r4;
+            3'b100: rdata2 = r5;
+            3'b101: rdata2 = r6;
+            3'b110: rdata2 = r7;
+            3'b111: rdata2 = r8;
+            default: rdata2 = 10'd0;
+        endcase 
     end
     // Asynchronous (combinational) reads based on the bank selection.
     //assign rdata1 = (bank_sel == 1'b0) ? bank0[raddr1] : bank1[raddr1];
