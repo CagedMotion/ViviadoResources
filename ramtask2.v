@@ -15,9 +15,9 @@ module ramtask2(
         ram[0] = 10'b0000001010; //address location for where the numbers are located.
         ram[1] = 10'b1001000000;
         ram[2] = 10'b0101001011;
-        ram[10] = 10'b000000101;
-        ram[11] = 10'b000000011;
-        ram[12] = 10'b000000000;
+        ram[10] = 10'b0000000101; // value 5
+        ram[11] = 10'b1111111101; // value -3
+        ram[12] = 10'b0000000000; 
      end
 
     // Asynchronous read: rdata immediately reflects the memory content at "address"

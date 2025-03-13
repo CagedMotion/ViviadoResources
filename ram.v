@@ -63,49 +63,49 @@ module tb_ram();
     always #(PERIOD/2) clk = ~clk;
     
     initial begin
-//        // Basic write operations
-//        wdata = 10'h01;
-//        address = 10'd0;
-//        we = 1'b1;
-//        #PERIOD;
+        // Basic write operations
+        wdata = 10'h01;
+        address = 10'd0;
+        we = 1'b1;
+        #PERIOD;
 
-//        wdata = 10'h02;
-//        address = 10'd1;     
-//        #PERIOD;
+        wdata = 10'h02;
+        address = 10'd75;     
+        #PERIOD;
 
-//        wdata = 10'h03;
-//        address = 10'd2;     
-//        #PERIOD;
+        wdata = 10'h03;
+        address = 10'd60;     
+        #PERIOD;
 
-//        // Read operations for addresses 0, 1, 2
-//        address = 10'd0;
-//        we = 1'b0;
-//        #PERIOD;
+        // Read operations for addresses 0, 1, 2
+        address = 10'd0;
+        we = 1'b0;
+        #PERIOD;
 
-//        address = 10'd1;
-//        #PERIOD;
+        address = 10'd1;
+        #PERIOD;
 
-//        address = 10'd2;
-//        #PERIOD;
+        address = 10'd2;
+        #PERIOD;
 
-//        // Additional write/read cycle
-//        wdata = 10'h04;
-//        address = 10'd3;
-//        we = 1'b1;
-//        #PERIOD;
+        // Additional write/read cycle
+        wdata = 10'h04;
+        address = 10'd25;
+        we = 1'b1;
+        #PERIOD;
 
-//        address = 10'd1;
-//        we = 1'b0;
-//        #PERIOD;
+        address = 10'd50;
+        we = 1'b0;
+        #PERIOD;
 
-//        // New test: write and read at the end address (1023)
-//        wdata = 10'h3FF; // Maximum 10-bit value
-//        address = 10'd1023;
-//        we = 1'b1;
-//        #PERIOD;
+        // New test: write and read at the end address (1023)
+        wdata = 10'h3FF; // Maximum 10-bit value
+        address = 10'd1023;
+        we = 1'b1;
+        #PERIOD;
 
-//        we = 1'b0;
-//        address = 10'd1023;
+        we = 1'b0;
+        address = 10'd1023;
         #PERIOD;
     end
 endmodule

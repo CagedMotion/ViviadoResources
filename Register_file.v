@@ -14,47 +14,50 @@ module register_file(
 );
     
     wire [9:0] r1, r2, r3, r4, r5, r6, r7, r8;
-    reg [9:0] w1, w2, w3, w4, w5, w6, w7, w8; 
+    reg [7:0] rwe;
     //bank 0
-    register_t0 t0(.clk(clk), .reset(rst), .en(we), .dout(r1), .din(w1));
-    register_t1 t1(.clk(clk), .reset(rst), .en(we), .dout(r2), .din(w2));
-    register_s0 s0(.clk(clk), .reset(rst), .en(we), .dout(r3), .din(w3));
-    register_s1 s1(.clk(clk), .reset(rst), .en(we), .dout(r4), .din(w4));
+    register_t0 t0(.clk(clk), .reset(rst), .en(rwe[0]), .dout(r1), .din(wdata));
+    register_t1 t1(.clk(clk), .reset(rst), .en(rwe[1]), .dout(r2), .din(wdata));
+    register_s0 s0(.clk(clk), .reset(rst), .en(rwe[2]), .dout(r3), .din(wdata));
+    register_s1 s1(.clk(clk), .reset(rst), .en(rwe[3]), .dout(r4), .din(wdata));
     
     //bank1
-    register_t2 t2(.clk(clk), .reset(rst), .en(we), .dout(r5), .din(w5));
-    register_t3 t3(.clk(clk), .reset(rst), .en(we), .dout(r6), .din(w6));
-    register_s2 s2(.clk(clk), .reset(rst), .en(we), .dout(r7), .din(w7));
-    register_s3 s3(.clk(clk), .reset(rst), .en(we), .dout(r8), .din(w8));
+    register_t2 t2(.clk(clk), .reset(rst), .en(rwe[4]), .dout(r5), .din(wdata));
+    register_t3 t3(.clk(clk), .reset(rst), .en(rwe[5]), .dout(r6), .din(wdata));
+    register_s2 s2(.clk(clk), .reset(rst), .en(rwe[6]), .dout(r7), .din(wdata));
+    register_s3 s3(.clk(clk), .reset(rst), .en(rwe[7]), .dout(r8), .din(wdata));
     
     // Two banks, each with 4 registers of 10 bits
     wire [2:0] write_selector;
     wire [2:0] read_selector0, read_selector1;
     assign write_selector = {bank_sel,waddr[1:0]};
-    assign read_selector0 = {bank_sel, raddr1[1:0]};
+    assign read_selector0 = {bank_sel,raddr1[1:0]};
     assign read_selector1 = {bank_sel,raddr2[1:0]};
+    
     
     // Synchronous reset and write operation.
     // On reset, clear both banks.
     // On a write, update the register in the selected bank.
      // Synchronous write block.
-    always @(posedge clk) begin
-        if (rst) begin
-            w1 <= 10'b0;  w2 <= 10'b0;  w3 <= 10'b0;  w4 <= 10'b0;
-            w5 <= 10'b0;  w6 <= 10'b0;  w7 <= 10'b0;  w8 <= 10'b0;
-        end else if (we) begin
-            case(write_selector)     
-                3'b000: w1 <= wdata;
-                3'b001: w2 <= wdata;
-                3'b010: w3 <= wdata;
-                3'b011: w4 <= wdata;
-                3'b100: w5 <= wdata;
-                3'b101: w6 <= wdata;
-                3'b110: w7 <= wdata;
-                3'b111: w8 <= wdata;
+    
+    always @(write_selector, we) begin
+        if (we == 1) begin    
+            case(write_selector)
+                3'b000: rwe = 8'b00000001;
+                3'b001: rwe = 8'b00000010;
+                3'b010: rwe = 8'b00000100;
+                3'b011: rwe = 8'b00001000;
+                3'b100: rwe = 8'b00010000;
+                3'b101: rwe = 8'b00100000;
+                3'b110: rwe = 8'b01000000;
+                3'b111: rwe = 8'b10000000;
+                default: rwe = 8'b00000000;
             endcase                  
-        end
+        end 
+        else
+            rwe = 8'b00000000;
     end
+    
     // Combinational read blocks.
     always @(*) begin
         case(read_selector0)

@@ -239,6 +239,7 @@ module CPU10bits(
             // 110: LOAD.
             3'b110: begin
                 alu_ctrl = 3'b000;            // Compute effective address: base + offset.
+                alu_inA = gp_rdata1;
                 alu_inB  = sign_extend_imm(fimm);
                 // Use ALU result as RAM address.
                 ram_addr = alu_result;
@@ -250,11 +251,15 @@ module CPU10bits(
             // 111: STORE.
             3'b111: begin
                 alu_ctrl = 3'b000;            // Compute effective address.
+                alu_inA = gp_rdata1;
                 alu_inB  = sign_extend_imm(fimm);
                 ram_addr = alu_result;
                 // Write the data from the rt register.
                 ram_wdata = gp_rdata2;
                 ram_we    = 1'b1;
+            end
+            default: begin
+            gp_reg_we = 1'b0;
             end
         endcase
 
@@ -304,7 +309,7 @@ module tb_cpu10bits;
     );
     
     parameter PERIOD = 10;
-    initial clk = 1'b1;
+    initial clk = 1'b0;
     always #(PERIOD/2) clk = ~clk;
     
     initial begin
@@ -317,7 +322,7 @@ module tb_cpu10bits;
         // Optionally, drive any test stimulus here.
         #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
         #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
+//        #PERIOD;#PERIOD;#PERIOD;//#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
 //        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
 //        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
 //        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
