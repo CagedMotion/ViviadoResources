@@ -90,7 +90,7 @@ module CPU10bits(
 //    );
     //-------------------------------------------------------------------------
     // 6) Instruction Decode
-    //    According to your ISA:
+    //    According to the ISA:
     //      [9:7] opcode, [6:5] rs, [4:3] rt, [2] bank_sel, [1:0] func/imm.
     //    (Swap fields if needed to match your actual machine code.)
     //-------------------------------------------------------------------------
@@ -217,7 +217,7 @@ module CPU10bits(
             // 011: ADDI: Immediate addition.
             3'b011: begin
                 alu_ctrl  = 3'b000;  // ADD
-                alu_inB   = zero_extend_imm(fimm);
+                alu_inB   = sign_extend_imm(fimm);
                 gp_reg_we    = 1'b1;
                 gp_reg_wdata = alu_result;
             end
@@ -230,6 +230,8 @@ module CPU10bits(
 
             // 101: BEQ: Branch if equal.
             3'b101: begin
+                alu_inA <= gp_rdata1;
+                alu_inB <= gp_rdata2;
                 if (alu_inA == alu_inB) begin
                     branch_sig    = 1'b1;
                     branch_target = pc + zero_extend_imm(fimm);
@@ -252,7 +254,7 @@ module CPU10bits(
             3'b111: begin
                 alu_ctrl = 3'b000;            // Compute effective address.
                 alu_inA = gp_rdata1;
-                alu_inB  = sign_extend_imm(fimm);
+                alu_inB  = zero_extend_imm(fimm);
                 ram_addr = alu_result;
                 // Write the data from the rt register.
                 ram_wdata = gp_rdata2;
@@ -309,7 +311,7 @@ module tb_cpu10bits;
     );
     
     parameter PERIOD = 10;
-    initial clk = 1'b0;
+    initial clk = 1'b1;
     always #(PERIOD/2) clk = ~clk;
     
     initial begin
@@ -322,8 +324,8 @@ module tb_cpu10bits;
         // Optionally, drive any test stimulus here.
         #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
         #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-//        #PERIOD;#PERIOD;#PERIOD;//#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-//        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
+        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
+        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;//#PERIOD;#PERIOD;#PERIOD;
 //        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
 //        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
 //        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
