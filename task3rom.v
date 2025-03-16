@@ -20,7 +20,7 @@ module task3rom(
         memory[9] <= 10'b0111010001; // addi s0, s0, 1, 0;
         memory[10] <= 10'b0111111001; // addi s1, s1, 1, 0;
         memory[11] <= 10'b0111010111; // addi s2, s2, -1, 1;                        
-        memory[12] <= 10'b1011001110; // beq t3, s2, complete mem[13], 1; offset of 2 for the branch.
+        memory[12] <= 10'b1011001110; // beq t3, s2, complete mem[14], 1; offset of 2 for the branch.
         memory[13] <= 10'b1000000111; // jump loop mem[7] | back to loop start in rom.
         memory[14] <= 10'b0010000010; // halt : complete
         
