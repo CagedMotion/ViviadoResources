@@ -48,17 +48,17 @@ module CPU10bits(
 //        .read_data(instr)
 //    );
 
-    task2rom ROM_inst (
-        .address(pc),
-        .clk(clk),           // clk not strictly required if ROM is asynchronous
-        .read_data(instr)
-    );
-
-//    task3rom ROM_inst (
+//    task2rom ROM_inst (
 //        .address(pc),
 //        .clk(clk),           // clk not strictly required if ROM is asynchronous
 //        .read_data(instr)
 //    );
+
+    task3rom ROM_inst (
+        .address(pc),
+        .clk(clk),           // clk not strictly required if ROM is asynchronous
+        .read_data(instr)
+    );
 
     //-------------------------------------------------------------------------
     // 4) Data Memory (Asynchronous Read, Synchronous Write)
@@ -74,20 +74,20 @@ module CPU10bits(
 //        .wdata(ram_wdata),
 //        .rdata(ram_rdata)
 //    );
-    ramtask2 RAM_inst (
-        .clk(clk),
-        .we(ram_we),
-        .address(ram_addr),
-        .wdata(ram_wdata),
-        .rdata(ram_rdata)
-    );
-//    ramtask3 RAM_inst (
+//    ramtask2 RAM_inst (
 //        .clk(clk),
 //        .we(ram_we),
 //        .address(ram_addr),
 //        .wdata(ram_wdata),
 //        .rdata(ram_rdata)
 //    );
+    ramtask3 RAM_inst (
+        .clk(clk),
+        .we(ram_we),
+        .address(ram_addr),
+        .wdata(ram_wdata),
+        .rdata(ram_rdata)
+    );
     //-------------------------------------------------------------------------
     // 6) Instruction Decode
     //    According to the ISA:
@@ -242,7 +242,7 @@ module CPU10bits(
             3'b110: begin
                 alu_ctrl = 3'b000;            // Compute effective address: base + offset.
                 alu_inA = gp_rdata1;
-                alu_inB  = sign_extend_imm(fimm);
+                alu_inB  = zero_extend_imm(fimm);
                 // Use ALU result as RAM address.
                 ram_addr = alu_result;
                 // Asynchronous read from RAM is valid in the same cycle.
@@ -325,7 +325,19 @@ module tb_cpu10bits;
         #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
         #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
         #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;//#PERIOD;#PERIOD;#PERIOD;
+        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
+        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
+        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
+        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
+        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
+        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
+        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
+        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
+        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
+        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
+        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
+        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
+//        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
 //        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
 //        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
 //        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
