@@ -8,22 +8,70 @@ module task1rom(
     reg [9:0] memory[1023:0];
     
     initial begin
-        //store the value 5 in t0
-        memory[0] <= 10'b0110000001; //addi t0,t0,1     0000000001
-        memory[1] <= 10'b0010000001; //sll t0,t0        0000000010
-        memory[2] <= 10'b0010000001; //sll t0,t0        0000000100
-        memory[3] <= 10'b0110000001; //addi t0,t0,1     0000000101
-        //store the value 4 in t1
-        memory[4] <= 10'b0110101001; //addi t1,t1,1     0000000001
-        memory[5] <= 10'b0010101001; //sll t1,t1        0000000010
-        memory[6] <= 10'b0010101001; //sll t1,t1        0000000100
-        //add t0(5) to t1(4) and store the value in t0(9)
-        memory[7] <= 10'b0000100000; //add t0,t1        0000001001
-//        memory[1000] <= 10'b0000000101; //5
-//        memory[1001] <= 10'b0000000100; //4
+        //loop1:
+        memory[0] <= 10'b0000101001; //sub t1, t1, t1, 0;
+        memory[0] <= 10'b0000010010; //slt t1, t0, t1, 0;
+        memory[0] <= 10'b1010110011; //beq t1, s1, done2, 0;
+        memory[0] <= 10'b0110010110; //addi s2, t2, -1, 1;
+        memory[0] <= 10'b1000000111; //jump loop2;
+        
+        memory[0] <= 10'b1000101110; //jump done;
+        
+        //loop2:
+        memory[0] <= 10'b0001111101; //sub s3, s3, s3, 1;
+        memory[0] <= 10'b1111101100; //store t3, 0(s3), 1;
+        memory[0] <= 10'b0001011110; //slt t3, s2, s3, 1;
+        memory[0] <= 10'b0100111110; //bne t3, s3, increment, 1;
+        memory[0] <= 10'b1000001111; //jump continue1;
+        
+        //increment
+        memory[0] <= 10'b1101101100; //load t3, 0(s3), 1;
+        memory[0] <= 10'b0110000001; //addi t0, t0, 1, 0;
+        memory[0] <= 10'b0110000101; //addi t2, t2, 1, 1;
+        memory[0] <= 10'b1000000001; //jump loop1;
+        
+        //continue1
+        memory[0] <= 10'b1101101100; //load t3, 0(s3), 1;
+        memory[0] <= 10'b1111100101; //store t2, 1(s3), 1;
+        memory[0] <= 10'b1111110110; //store s2, 2(s3), 1;
+        memory[0] <= 10'b0001001100; //add t3, s2, t3, 1;
+        memory[0] <= 10'b1100110100; //load t2, 0(t3), 1;
+        memory[0] <= 10'b0000110101; //sub t3, t3, s2, 1;
+        memory[0] <= 10'b0111010101; //addi s2, s2, 1, 1; 
+        memory[0] <= 10'b0001001100; //add t3, s2, t3, 1;
+        memory[0] <= 10'b1100110100; //load s2, 0(t3), 1;
+        memory[0] <= 10'b0000110101; //sub t3, t3, s2, 1;
+        memory[0] <= 10'b0000010110; //slt s2, s2, t2, 1;
+        memory[0] <= 10'b1011011110; //beq s2, s3, jinccrement, 1;
+        memory[0] <= 10'b1000011111; //jump continue2;
+        
+        //jincrement:
+        memory[0] <= 10'b1101100101; //load t2, 1(s3), 1;
+        memory[0] <= 10'b1101110110; //load s2, 2(s3), 1;
+        memory[0] <= 10'b1000001011; //jump increment;
+        
+        //continue2:
+        memory[0] <= 10'b1101110110; //load s2, 2(s3), 1;
+        memory[0] <= 10'b0111010101; //addi s2, s2, 1, 1;
+        memory[0] <= 10'b0001001100; //add t3, s2, t3, 1;
+        memory[0] <= 10'b1100111100; //load s3, s2(t3) 1;
+        memory[0] <= 10'b0000110101; //sub t3, t3, s2, 1;
+        memory[0] <= 10'b0001001100; //add t3, s2, t3, 1;
+        memory[0] <= 10'b1110100100; //store t2, s2(t3), 1;
+        memory[0] <= 10'b0000110101; //sub t3, t3, s2, 1;
+        memory[0] <= 10'b0111010110; //addi s2, s2, -1, 1;
+        memory[0] <= 10'b0001001100; //add t3, s2, t3, 1;
+        memory[0] <= 10'b1110111100; //store, s3, s2(t3), 1;
+        memory[0] <= 10'b0000110101; //sub t3, t3, s2, 1;
+        memory[0] <= 10'b0111010110; //addi s2, s2, -1, 1;
+        memory[0] <= 10'b1101100101; //load t2, 1(s3), 1;
+        memory[0] <= 10'b1000000110; //jump loop2;
+        
+        //done:
+        memory[0] <= 10'b0010000010; //halt
     end
     
-    always @(posedge clk) begin
+    always @(*) begin
         read_data <= memory[address];
     end
 endmodule
