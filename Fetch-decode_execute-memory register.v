@@ -1,24 +1,27 @@
 module fd_EX_Mem_reg(
-    output wire [43:0] dout,
-    input wire clk, reset, en,
-    input wire [43:0] din,
-    input wire [9:0] rom_instr_in 
-    
+    input wire clk, reset,
+    input wire [2:0] gp_rdata1_address_in, gp_rdata2_address_in, 
+    input wire [9:0] aluA_in, aluB_in,
+    input wire [2:0] alu_ctrl_in,
+    input wire gp_reg_wb_in,
+    output wire [2:0] gp_rdata1_address_out, gp_rdata2_address_out,
+    output wire [9:0] aluA_out, aluB_out, 
+    output wire [2:0] alu_ctrl_out,
+    output wire gp_reg_wb_out
     );
+    
+    register_10bit REG1(.clk(clk), .reset(reset), .en(en), .dout(aluA_out), .din(aluA_in)),
+                   REG2(.clk(clk), .reset(reset), .en(en), .dout(aluB_out), .din(aluB_in));
 
-    wire [43:0] w1;    
-    register_10bit REG1(.clk(clk), .reset(reset), .en(en), .dout(w1[43:34]), .din(din[43:34])),
-                   REG2(.clk(clk), .reset(reset), .en(en), .dout(w1[33:24]), .din(din[33:24])),
-                   REG3(.clk(clk), .reset(reset), .en(en), .dout(w1[23:14]), .din(din[23:14])),
-                   REG4(.clk(clk), .reset(reset), .en(en), .dout(w1[13:4]), .din(din[13:4]));
-
-    register_1bit REG5(.clk(clk), .reset(reset), .en(en), .dout(w1[3]), .din(din[3])),
-                  REG6(.clk(clk), .reset(reset), .en(en), .dout(w1[2]), .din(din[2])),
-                  REG7(.clk(clk), .reset(reset), .en(en), .dout(w1[1]), .din(din[1])),
-                  REG8(.clk(clk), .reset(reset), .en(en), .dout(w1[0]), .din(din[0]));
-
-
-    assign dout = w1;
-
+    register_1bit REG3(.clk(clk), .reset(reset), .en(en), .dout(gp_rdata1_address_out[2]), .din(gp_rdata1_address_in[2])),
+                  REG4(.clk(clk), .reset(reset), .en(en), .dout(gp_rdata1_address_out[1]), .din(gp_rdata1_address_in[1])),
+                  REG5(.clk(clk), .reset(reset), .en(en), .dout(gp_rdata1_address_out[0]), .din(gp_rdata1_address_in[0])),
+                  REG6(.clk(clk), .reset(reset), .en(en), .dout(gp_rdata2_address_out[2]), .din(gp_rdata2_address_in[2]));
+                  REG7(.clk(clk), .reset(reset), .en(en), .dout(gp_rdata1_address_out[1]), .din(gp_rdata2_address_in[1]));
+                  REG8(.clk(clk), .reset(reset), .en(en), .dout(gp_rdata1_address_out[0]), .din(gp_rdata2_address_in[0]));
+                  REG9(.clk(clk), .reset(reset), .en(en), .dout(alu_ctrl_out[2]), .din(alu_ctrl_in[2]));
+                  REG10(.clk(clk), .reset(reset), .en(en), .dout(alu_ctrl_out[1]), .din(alu_ctrl_in[1]));
+                  REG12(.clk(clk), .reset(reset), .en(en), .dout(alu_ctrl_out[0]), .din(alu_ctrl_in[0]));
+                  REG13(.clk(clk), .reset(reset), .en(en), .dout(gp_reg_wb_out), .din(gp_reg_wb_in));
 
 endmodule

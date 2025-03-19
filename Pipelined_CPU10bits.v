@@ -59,14 +59,15 @@ module pipeline_CPU10bits(
 //        .clk(clk),           // clk not strictly required if ROM is asynchronous
 //        .read_data(instr)
 //    );
-
+    
+    
     assign gp_rdata1_address = {bank_sel,rs_field};
     assign gp_rdata2_address = {bank_sel, rt_field}; 
     fd_EX_Mem_reg fd_reg(.clk(clk), .gp_rdata1_address_in(gp_rdata1_address), .gp_rdata2_address_in(gp_rdata2_address),
                           .gp_rdata1_address_out(gp_rdata1_address), .gp_rdata2_address_out(gp_rdata2_address),
                           .aluA_in(aluA_in), .aluA_out(aluA_in),
                           .aluB_in(aluB_in), .aluB_out(aluB_in),
-                          .alu_ctrl_in(alu_ctrl), .alu_ctrl_out(alu_ctrl)
+                          .alu_ctrl_in(alu_ctrl), .alu_ctrl_out(alu_ctrl), .gp_reg_wb_in(gp_reg_we), .gp_reg_wb_out(gp_reg_we)
                           );
 
     //-------------------------------------------------------------------------
@@ -148,7 +149,7 @@ module pipeline_CPU10bits(
 
     // the execute memory writeback register for pipelining.
     
-    Exe_mem_WB_reg EM_reg(.clk(clk));
+    Exe_Mem_WB_reg EM_reg(.clk(clk), .ram_rdata_in(ram_data), .);
     //-------------------------------------------------------------------------
     // 8) Sequential State: Halt Signal (PC update is handled in fetch_unit)
     //-------------------------------------------------------------------------
