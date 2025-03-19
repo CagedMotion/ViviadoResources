@@ -149,7 +149,7 @@ module pipeline_CPU10bits(
 
     // the execute memory writeback register for pipelining.
     
-    Exe_Mem_WB_reg EM_reg(.clk(clk), .ram_rdata_in(ram_data), .);
+    Exe_Mem_WB_reg EM_reg(.clk(clk), .ram_rdata_in(ram_data), .gp_reg_wb_in(gp_reg_we), .gp_reg_wb_out(gp_reg_we));
     //-------------------------------------------------------------------------
     // 8) Sequential State: Halt Signal (PC update is handled in fetch_unit)
     //-------------------------------------------------------------------------
