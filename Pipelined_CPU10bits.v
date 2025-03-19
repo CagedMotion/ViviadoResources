@@ -230,8 +230,8 @@ module pipeline_CPU10bits(
 
             // 101: BEQ: Branch if equal.
             3'b101: begin
-                alu_inA <= gp_rdata1;
-                alu_inB <= gp_rdata2;
+//                alu_inA <= gp_rdata1;
+//                alu_inB <= gp_rdata2;
                 if (alu_inA == alu_inB) begin
                     branch_sig    = 1'b1;
                     branch_target = pc + zero_extend_imm(fimm);
@@ -296,6 +296,7 @@ module pipeline_CPU10bits(
 
 endmodule
 
+<<<<<<< HEAD
 module hazard_detection_unit (
     input  wire        ex_mem_read,   // Asserted if the instruction in the Execute stage is a load.
     input  wire [1:0]  ex_dest_reg,   // Destination register of the Execute stage instruction.
@@ -318,6 +319,8 @@ endmodule
 
 
 
+=======
+>>>>>>> 75c3fe6d119ce22de90101e19687cf1c92ea807a
 // Testbench for CPU10bits
 module tb_pipeline_cpu10bits;
     reg clk;

@@ -42,9 +42,11 @@ module ALU(
         .cout(sub_cout)
     );
     
-    wire   unused_add_cout, unused_sub_cout;
-    assign unused_add_cout = add_cout;
-    assign unused_sub_cout = sub_cout;
+//    wire   unused_add_cout, unused_sub_cout;
+//    assign unused_add_cout = add_cout;
+//    assign unused_sub_cout = sub_cout;
+    assign add_cout = 0;
+    assign sub_cout = 0;
     
     // NAND Operation (bitwise NAND of A and B)
     wire [9:0] nand_result;

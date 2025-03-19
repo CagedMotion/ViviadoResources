@@ -252,7 +252,7 @@ module cpu_top(
                 we = 1'b1;
             end
             3'b100 : begin                  //jump
-                jump_target = pc + signe
+//                jump_target = pc + signex;                         ======ERROR======
                 branch = 10'b0;
                 jump = 10'b1;
                 bank_sel = rom_out[2];
