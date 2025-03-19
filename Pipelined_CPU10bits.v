@@ -42,17 +42,17 @@ module pipeline_CPU10bits(
     //    Use the PC from the fetch unit to index into ROM.
     //-------------------------------------------------------------------------
     wire [9:0] instr;
-    task1rom ROM_inst (
-        .address(pc),
-        .clk(clk),           // clk not strictly required if ROM is asynchronous
-        .read_data(instr)
-    );
-
-//    task2rom ROM_inst (
+//    task1rom ROM_inst (
 //        .address(pc),
 //        .clk(clk),           // clk not strictly required if ROM is asynchronous
 //        .read_data(instr)
 //    );
+
+    task2rom ROM_inst (
+        .address(pc),
+        .clk(clk),           // clk not strictly required if ROM is asynchronous
+        .read_data(instr)
+    );
 
 //    task3rom ROM_inst (
 //        .address(pc),
@@ -67,20 +67,20 @@ module pipeline_CPU10bits(
     reg  [9:0] ram_wdata;
     reg        ram_we;
     wire [9:0] ram_rdata;
-    ramtask1 RAM_inst (
-        .clk(clk),
-        .we(ram_we),
-        .address(ram_addr),
-        .wdata(ram_wdata),
-        .rdata(ram_rdata)
-    );
-//    ramtask2 RAM_inst (
+//    ramtask1 RAM_inst (
 //        .clk(clk),
 //        .we(ram_we),
 //        .address(ram_addr),
 //        .wdata(ram_wdata),
 //        .rdata(ram_rdata)
 //    );
+    ramtask2 RAM_inst (
+        .clk(clk),
+        .we(ram_we),
+        .address(ram_addr),
+        .wdata(ram_wdata),
+        .rdata(ram_rdata)
+    );
 //    ramtask3 RAM_inst (
 //        .clk(clk),
 //        .we(ram_we),
@@ -316,6 +316,8 @@ module hazard_detection_unit (
 
 endmodule
 
+
+
 // Testbench for CPU10bits
 module tb_pipeline_cpu10bits;
     reg clk;
@@ -348,14 +350,14 @@ module tb_pipeline_cpu10bits;
         #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
         #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
         #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
+//        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
+//        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
+//        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
+//        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
+//        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
+//        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
+//        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
+//        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
 //        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
 //        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
 //        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
