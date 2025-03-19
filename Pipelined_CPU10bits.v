@@ -42,17 +42,17 @@ module pipeline_CPU10bits(
     //    Use the PC from the fetch unit to index into ROM.
     //-------------------------------------------------------------------------
     wire [9:0] instr;
-    task1rom ROM_inst (
-        .address(pc),
-        .clk(clk),           // clk not strictly required if ROM is asynchronous
-        .read_data(instr)
-    );
-
-//    task2rom ROM_inst (
+//    task1rom ROM_inst (
 //        .address(pc),
 //        .clk(clk),           // clk not strictly required if ROM is asynchronous
 //        .read_data(instr)
 //    );
+
+    task2rom ROM_inst (
+        .address(pc),
+        .clk(clk),           // clk not strictly required if ROM is asynchronous
+        .read_data(instr)
+    );
 
 //    task3rom ROM_inst (
 //        .address(pc),
@@ -67,20 +67,20 @@ module pipeline_CPU10bits(
     reg  [9:0] ram_wdata;
     reg        ram_we;
     wire [9:0] ram_rdata;
-    ramtask1 RAM_inst (
-        .clk(clk),
-        .we(ram_we),
-        .address(ram_addr),
-        .wdata(ram_wdata),
-        .rdata(ram_rdata)
-    );
-//    ramtask2 RAM_inst (
+//    ramtask1 RAM_inst (
 //        .clk(clk),
 //        .we(ram_we),
 //        .address(ram_addr),
 //        .wdata(ram_wdata),
 //        .rdata(ram_rdata)
 //    );
+    ramtask2 RAM_inst (
+        .clk(clk),
+        .we(ram_we),
+        .address(ram_addr),
+        .wdata(ram_wdata),
+        .rdata(ram_rdata)
+    );
 //    ramtask3 RAM_inst (
 //        .clk(clk),
 //        .we(ram_we),
@@ -230,8 +230,8 @@ module pipeline_CPU10bits(
 
             // 101: BEQ: Branch if equal.
             3'b101: begin
-                alu_inA <= gp_rdata1;
-                alu_inB <= gp_rdata2;
+//                alu_inA <= gp_rdata1;
+//                alu_inB <= gp_rdata2;
                 if (alu_inA == alu_inB) begin
                     branch_sig    = 1'b1;
                     branch_target = pc + zero_extend_imm(fimm);
@@ -293,26 +293,6 @@ module pipeline_CPU10bits(
             sign_extend_jmp = {{3{jmp[6]}}, jmp};
         end
     endfunction
-
-endmodule
-
-module hazard_detection_unit (
-    input  wire        ex_mem_read,   // Asserted if the instruction in the Execute stage is a load.
-    input  wire [1:0]  ex_dest_reg,   // Destination register of the Execute stage instruction.
-    input  wire [1:0]  id_src_reg1,   // First source register from the Decode stage.
-    input  wire [1:0]  id_src_reg2,   // Second source register from the Decode stage.
-    output reg         stall          // Stall signal: asserted when a hazard is detected.
-);
-
-    always @(*) begin
-        // If a load instruction in the execute stage writes to a register that is
-        // needed by the instruction in the decode stage, assert stall.
-        if (ex_mem_read && ((ex_dest_reg == id_src_reg1) || (ex_dest_reg == id_src_reg2))) begin
-            stall = 1'b1;
-        end else begin
-            stall = 1'b0;
-        end
-    end
 
 endmodule
 

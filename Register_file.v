@@ -59,7 +59,7 @@ module register_file(
     end
     
     // Combinational read blocks.
-    always @(*) begin
+    always @(negedge(clk)) begin
         case(read_selector0)
             3'b000: rdata1 = r1;
             3'b001: rdata1 = r2;
@@ -73,7 +73,7 @@ module register_file(
         endcase
     end
 
-    always @(*) begin
+    always @(negedge(clk)) begin
         case(read_selector1)
             3'b000: rdata2 = r1;
             3'b001: rdata2 = r2;
