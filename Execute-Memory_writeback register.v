@@ -1,6 +1,6 @@
 `timescale 1ns/1ps
 
-module Exe_Mem_WB_reg(
+module fd_EX_Mem_reg(
     output wire [43:0] dout,
     input wire clk, reset, en,
     input wire [43:0] din 

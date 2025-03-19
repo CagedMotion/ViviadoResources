@@ -1,4 +1,4 @@
-module fd_EX_Mem_reg(
+module Exe_Mem_WB_reg(
     output wire [23:0] dout,
     input wire clk, reset, en,
     input wire [23:0] din 
