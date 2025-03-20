@@ -59,12 +59,11 @@ module pipeline_CPU10bits(
     wire [9:0] wb_wdata;
     wire [1:0] wb_waddr;
     wire       wb_we;
-    wire       wb_bank_sel;
     register_file RF_inst (
         .clk(clk),
         .rst(rst),
         .we(wb_we),
-        .bank_sel(wb_bank_sel),
+        .bank_sel(bank_sel),
         .waddr(wb_waddr),   // lower 2 bits
         .wdata(wb_wdata),
         .raddr1(rs_field),
@@ -275,8 +274,7 @@ module pipeline_CPU10bits(
         .ram_rdata_in(mem_rdata), .ram_rdata_out(wb_mem_rdata),
         .gp_reg_wb_in(em_reg_we),.gp_reg_wb_out(wb_reg_we),
         .mem_re_in(em_mem_re),.mem_re_out(wb_mem_re),
-        .gp_rdata2_address_in(dest_reg_fd), .gp_rdata2_address_out(wb_dest),
-    );
+        .gp_rdata2_address_in(dest_reg_fd), .gp_rdata2_address_out(wb_dest));
 
     //----------------------------------------------------------
     // Stage 3: Writeback (WB)
