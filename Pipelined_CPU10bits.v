@@ -140,6 +140,7 @@ module pipeline_CPU10bits(
     wire [9:0] alu_outA, alu_outB;
     wire [2:0] gp_rdata1_address_out, gp_rdata2_address_out;
     wire gp_reg_we1, gp_reg_we_out1;
+    wire [9:0] tempmux1,tempmux2;
     assign gp_reg_we1 = gp_reg_we; 
     fd_EX_Mem_reg fd_reg(.clk(clk), .gp_rdata1_address_in({bank_sel,rs_field}), .gp_rdata2_address_in({bank_sel, rt_field}),
                           .gp_rdata1_address_out(gp_rdata1_address_out), .gp_rdata2_address_out(gp_rdata2_address_out),
@@ -148,12 +149,16 @@ module pipeline_CPU10bits(
                           .alu_ctrl_in(alu_ctrl), .alu_ctrl_out(alu_ctrl_out), .gp_reg_wb_in(gp_reg_we1), .gp_reg_wb_out(gp_reg_we_out1),
                           .reset(rst));
 
+    forwarding_unit fw_unit(.exmem_wb_wr(gp_reg_we_out2), .ex_dest_reg(gp_rdata2_address_out1),
+                             .ex_dest_reg_value(alu_result_out), .id_dest_reg(gp_rdata2_address_out), .id_src_reg(gp_rdata1_address_out),
+                             .forwardA(tempmux1), forwardB(tempmux2));
 
     // the execute memory writeback register for pipelining.
-    wire [9:0] ram_data_out1;
-    wire [2:0] gp_rdata2_out1;
+    wire [9:0] ram_data_out1, alu_result_out;
+    wire [2:0] gp_rdata2_address_out1;
     Exe_Mem_WB_reg EM_reg(.clk(clk), .ram_rdata_in(ram_rdata), .ram_rdata_out(ram_rdata_out1), .gp_reg_wb_in(gp_reg_we_out1), .gp_reg_wb_out(gp_reg_we_out2),
-                          .reset(rst), .gp_rdata2_address_in(gp_rdata2_address_out), .gp_rdata2_address_out(gp_rdata2_out1));
+                          .reset(rst), .gp_rdata2_address_in(gp_rdata2_address_out), .gp_rdata2_address_out(gp_rdata2_address_out1), .alu_result_in(alu_result),
+                          .alu_result_out(alu_result_out));
                           
                           
     //-------------------------------------------------------------------------
