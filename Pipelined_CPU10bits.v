@@ -280,7 +280,7 @@ module pipeline_CPU10bits(
     // Stage 3: Writeback (WB)
     //----------------------------------------------------------
     reg [9:0] final_wdata;
-    always @(*) begin
+    always @(posedge clk) begin
         if (wb_mem_re)
             final_wdata = wb_mem_rdata;   // load
         else
