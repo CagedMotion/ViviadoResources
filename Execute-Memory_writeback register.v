@@ -1,5 +1,5 @@
 module Exe_Mem_WB_reg(
-    input wire clk, reset, en
+    input wire clk, reset, en,
     input wire gp_reg_wb_in,
     input wire [9:0] ram_rdata_in,
     output wire [9:0] ram_rdata_out, 

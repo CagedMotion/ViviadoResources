@@ -1,3 +1,5 @@
+`timescale 1ns/1ps
+
 module fd_EX_Mem_reg(
     input wire clk, reset, en,
     input wire [2:0] gp_rdata1_address_in, gp_rdata2_address_in, 
