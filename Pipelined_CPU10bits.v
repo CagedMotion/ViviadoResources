@@ -6,26 +6,24 @@ module pipeline_CPU10bits(
     output wire cpu_halted  // Indicates that the CPU has halted.
 );
 
-    //-------------------------------------------------------------------------
-    // 1) PC & Fetch Unit Signals
-    //-------------------------------------------------------------------------
-    wire [9:0] pc;  // PC output from fetch unit
+    //----------------------------------------------------------
+    // Stage 1: Fetch + Decode (FD)
+    //----------------------------------------------------------
+    // PC & Fetch Unit Signals
+    wire [9:0] pc;       // PC from fetch_unit
+    wire [9:0] instr;    // Instruction from ROM
+
+    // Branch/Jump signals for fetch unit (set by FD decode)
     reg        branch_sig;
     reg        jump_sig;
     reg [9:0]  branch_target;
     reg [9:0]  jump_target;
     
-    // Halt signal for the fetch unit
+    // Halt signal
     reg halted_reg;
-    reg next_halt;
     assign cpu_halted = halted_reg;
 
-    //-------------------------------------------------------------------------
-    // 2) Instantiate the Fetch Unit
-    //    The fetch unit uses branch, jump, branch_target, and jump_target
-    //    to compute the next PC. When none of these are asserted, it simply
-    //    increments PC by one.
-    //-------------------------------------------------------------------------
+    // Instantiate Fetch Unit
     fetch_unit FU_inst (
         .clk(clk),
         .reset(rst),
@@ -37,63 +35,15 @@ module pipeline_CPU10bits(
         .pc_out(pc)
     );
 
-    //-------------------------------------------------------------------------
-    // 3) Instruction Memory (ROM)
-    //    Use the PC from the fetch unit to index into ROM.
-    //-------------------------------------------------------------------------
-    wire [9:0] instr;
-//    task1rom ROM_inst (
-//        .address(pc),
-//        .clk(clk),           // clk not strictly required if ROM is asynchronous
-//        .read_data(instr)
-//    );
-
+    // Instruction Memory (ROM)
     task2rom ROM_inst (
         .address(pc),
-        .clk(clk),           // clk not strictly required if ROM is asynchronous
+        .clk(clk),
         .read_data(instr)
     );
 
-//    task3rom ROM_inst (
-//        .address(pc),
-//        .clk(clk),           // clk not strictly required if ROM is asynchronous
-//        .read_data(instr)
-//    );
-
-    //-------------------------------------------------------------------------
-    // 4) Data Memory (Asynchronous Read, Synchronous Write)
-    //-------------------------------------------------------------------------
-    reg  [9:0] ram_addr;
-    reg  [9:0] ram_wdata;
-    reg        ram_we;
-    wire [9:0] ram_rdata;
-//    ramtask1 RAM_inst (
-//        .clk(clk),
-//        .we(ram_we),
-//        .address(ram_addr),
-//        .wdata(ram_wdata),
-//        .rdata(ram_rdata)
-//    );
-    ramtask2 RAM_inst (
-        .clk(clk),
-        .we(ram_we),
-        .address(ram_addr),
-        .wdata(ram_wdata),
-        .rdata(ram_rdata)
-    );
-//    ramtask3 RAM_inst (
-//        .clk(clk),
-//        .we(ram_we),
-//        .address(ram_addr),
-//        .wdata(ram_wdata),
-//        .rdata(ram_rdata)
-//    );
-    //-------------------------------------------------------------------------
-    // 6) Instruction Decode
-    //    According to the ISA:
-    //      [9:7] opcode, [6:5] rs, [4:3] rt, [2] bank_sel, [1:0] func/imm.
-    //    (Swap fields if needed to match your actual machine code.)
-    //-------------------------------------------------------------------------
+    // Decode the instruction fields
+    // according to ISA design.
     wire [2:0] opcode   = instr[9:7];
     wire [1:0] rs_field = instr[6:5];
     wire [1:0] rt_field = instr[4:3];
@@ -101,149 +51,94 @@ module pipeline_CPU10bits(
     wire [1:0] fimm     = instr[1:0];
     wire [6:0] jmp_addr = instr[6:0];
 
-    //-------------------------------------------------------------------------
-    // 5) Register File (Async Read, Sync Write)
-    //-------------------------------------------------------------------------
-    reg  [1:0] gp_reg_waddr;
-    reg  [9:0] gp_reg_wdata;
-    reg        gp_reg_we;
-    reg        gp_reg_bank_sel;
-    wire [9:0] gp_rdata1, gp_rdata2;
+    // Derive destination register as 3 bits: {bank_sel, rt_field}
+    wire [2:0] dest_reg_fd = {bank_sel, rt_field};
+
+    // Register File (placeholder or your own)
+    wire [9:0] fd_rdata1, fd_rdata2;
+    wire [9:0] wb_wdata;
+    wire [1:0] wb_waddr;
+    wire       wb_we;
+    wire       wb_bank_sel;
     register_file RF_inst (
         .clk(clk),
         .rst(rst),
-        .we(gp_reg_we),
-        .bank_sel(gp_reg_bank_sel),
-        .waddr(gp_reg_waddr),
-        .wdata(gp_reg_wdata),
+        .we(wb_we),
+        .bank_sel(wb_bank_sel),
+        .waddr(wb_waddr),   // lower 2 bits
+        .wdata(wb_wdata),
         .raddr1(rs_field),
         .raddr2(rt_field),
-        .rdata1(gp_rdata1),
-        .rdata2(gp_rdata2)
+        .rdata1(fd_rdata1),
+        .rdata2(fd_rdata2)
     );
-                          
-    //-------------------------------------------------------------------------
-    // 7) ALU Instantiation
-    //-------------------------------------------------------------------------
+
+    // Signals for FD stage (latched into FD->EM pipeline register)
     reg  [9:0] alu_inA, alu_inB;
-    wire [9:0] alu_result;
-    wire       alu_halt;
-    reg  [2:0] alu_ctrl;
-    wire [2:0] alu_ctrl_out;
-    wire [9:0] alu_outA, alu_outB;    
-    ALU ALU_inst (
-        .A(alu_outA),
-        .B(alu_outB),
-        .alu_ctrl(alu_ctrl_out),
-        .result(alu_result),
-        .halt(alu_halt)
-    );
-    wire [2:0] gp_rdata1_address_out, gp_rdata2_address_out;
-    wire gp_reg_we1, gp_reg_we_out1;
-    wire tempmux1,tempmux2;
-    wire [9:0] ram_rdata_out1, alu_result_out;
-    wire [2:0] gp_rdata2_address_out1;
-    assign gp_reg_we1 = gp_reg_we; 
-    fd_EX_Mem_reg fd_reg(.clk(clk), .gp_rdata1_address_in({bank_sel,rs_field}), .gp_rdata2_address_in({bank_sel, rt_field}),
-                          .gp_rdata1_address_out(gp_rdata1_address_out), .gp_rdata2_address_out(gp_rdata2_address_out),
-                          .aluA_in(alu_inA), .aluA_out(alu_outA),
-                          .aluB_in(alu_inB), .aluB_out(alu_outB),
-                          .alu_ctrl_in(alu_ctrl), .alu_ctrl_out(alu_ctrl_out), .gp_reg_wb_in(gp_reg_we1), .gp_reg_wb_out(gp_reg_we_out1),
-                          .reset(rst));
+    reg  [2:0] fd_alu_ctrl;
+    reg        fd_reg_we;
+    reg        fd_mem_we;
+    reg        fd_mem_re;
+    reg        fd_bank_sel;
+    reg  [9:0] fd_store_data; // Data to be stored for STORE instructions
 
-    forwarding_unit fw_unit(.exmem_wb_wr(gp_reg_we_out2), .ex_dest_reg(gp_rdata2_address_out1),
-                             .ex_dest_reg_value(alu_result_out), .id_dest_reg(gp_rdata2_address_out), .id_src_reg(gp_rdata1_address_out),
-                             .forwardA(tempmux1), .forwardB(tempmux2));
-
-    // the execute memory writeback register for pipelining.
-    Exe_Mem_WB_reg EM_reg(.clk(clk), .ram_rdata_in(ram_rdata), .ram_rdata_out(ram_rdata_out1), .gp_reg_wb_in(gp_reg_we_out1), .gp_reg_wb_out(gp_reg_we_out2),
-                          .reset(rst), .gp_rdata2_address_in(gp_rdata2_address_out), .gp_rdata2_address_out(gp_rdata2_address_out1), .alu_result_in(alu_result),
-                          .alu_result_out(alu_result_out));
-                          
-                          
-    //-------------------------------------------------------------------------
-    // 8) Sequential State: Halt Signal (PC update is handled in fetch_unit)
-    //-------------------------------------------------------------------------
-    always @(posedge clk or posedge rst) begin
-        if (rst) begin
-            halted_reg <= 1'b0;
-        end else begin
-            if (alu_halt)
-                halted_reg <= 1'b1;
-        end
-    end
-
-    //-------------------------------------------------------------------------
-    // 9) COMBINATIONAL Logic: Decoding, ALU, and Control Signal Generation
-    //     * NOTE: We now remove any direct computation of next_pc.
-    //     * Instead, we drive branch_sig, jump_sig, branch_target, and jump_target.
-    //-------------------------------------------------------------------------
+    // FD Stage Decoding
     always @(*) begin
-        // Default control signals
-        branch_sig       = 1'b0;
-        jump_sig         = 1'b0;
-        branch_target    = 10'd0;
-        jump_target      = 10'd0;
+        // Defaults
+        fd_alu_ctrl   = 3'b000;
+        fd_reg_we     = 1'b0;
+        fd_mem_we     = 1'b0;
+        fd_mem_re     = 1'b0;
+        fd_bank_sel   = bank_sel;
+        fd_store_data = 10'd0;
         
-        // Default register file signals
-        gp_reg_we      = 1'b0;
-        gp_reg_wdata   = 10'd0;
-        gp_reg_waddr   = rt_field;      // By convention, destination is rt
-        gp_reg_bank_sel = bank_sel;
+        // Default branch/jump signals for fetch unit.
+        branch_sig    = 1'b0;
+        jump_sig      = 1'b0;
+        branch_target = 10'd0;
+        jump_target   = 10'd0;
         
-        // Default RAM signals
-        ram_we         = 1'b0;
-        ram_addr       = 10'd0;
-        ram_wdata      = 10'd0;
+        // Default ALU operands from register file.
+        alu_inA = fd_rdata1;
+        alu_inB = fd_rdata2;
         
-        // Default ALU signals
-        alu_inA        = gp_rdata1;     // Read base from rs
-        alu_inB        = gp_rdata2;     // Read second operand from rt
-        alu_ctrl       = 3'b000;
-
         case (opcode)
             // 000: R-type arithmetic: ADD, SUB, SLT, NAND.
             3'b000: begin
                 case (fimm)
-                    2'b00: alu_ctrl = 3'b000; // ADD
-                    2'b01: alu_ctrl = 3'b001; // SUB
-                    2'b10: alu_ctrl = 3'b010; // SLT
-                    2'b11: alu_ctrl = 3'b011; // NAND
+                    2'b00: fd_alu_ctrl = 3'b000; // ADD
+                    2'b01: fd_alu_ctrl = 3'b001; // SUB
+                    2'b10: fd_alu_ctrl = 3'b010; // SLT
+                    2'b11: fd_alu_ctrl = 3'b011; // NAND
                 endcase
-                gp_reg_we    = 1'b1;
-                gp_reg_wdata = alu_result;
+                fd_reg_we = 1'b1;
             end
 
             // 001: SHIFT or HALT.
             3'b001: begin
                 case (fimm)
-                    2'b00: alu_ctrl = 3'b100; // SLR
-                    2'b01: alu_ctrl = 3'b101; // SLL
-                    2'b10: alu_ctrl = 3'b110; // HALT
-                    default: alu_ctrl = 3'b000;
+                    2'b00: fd_alu_ctrl = 3'b100; // SLR
+                    2'b01: fd_alu_ctrl = 3'b101; // SLL
+                    2'b10: fd_alu_ctrl = 3'b110; // HALT
+                    default: fd_alu_ctrl = 3'b000;
                 endcase
-                if (fimm == 2'b10)
-                    ; // Let alu_halt drive halt
-                else begin
-                    gp_reg_we    = 1'b1;
-                    gp_reg_wdata = alu_result;
-                end
+                if (fimm != 2'b10)
+                    fd_reg_we = 1'b1;
             end
 
             // 010: BNE: Branch if not equal.
             3'b010: begin
-                if (alu_inA != alu_inB) begin
+                if (fd_rdata1 != fd_rdata2) begin
                     branch_sig    = 1'b1;
-                    branch_target = pc + zero_extend_imm(fimm);  // Branch relative to current PC
+                    branch_target = pc + zero_extend_imm(fimm);
                 end
             end
 
             // 011: ADDI: Immediate addition.
             3'b011: begin
-                alu_ctrl  = 3'b000;  // ADD
-                alu_inB   = sign_extend_imm(fimm);
-                gp_reg_we    = 1'b1;
-                gp_reg_wdata = alu_result;
+                fd_alu_ctrl = 3'b000;  // ADD
+                alu_inB = sign_extend_imm(fimm);
+                fd_reg_we = 1'b1;
             end
 
             // 100: JUMP.
@@ -254,9 +149,7 @@ module pipeline_CPU10bits(
 
             // 101: BEQ: Branch if equal.
             3'b101: begin
-//                alu_inA <= gp_rdata1;
-//                alu_inB <= gp_rdata2;
-                if (alu_inA == alu_inB) begin
+                if (fd_rdata1 == fd_rdata2) begin
                     branch_sig    = 1'b1;
                     branch_target = pc + zero_extend_imm(fimm);
                 end
@@ -264,39 +157,156 @@ module pipeline_CPU10bits(
 
             // 110: LOAD.
             3'b110: begin
-                alu_ctrl = 3'b000;            // Compute effective address: base + offset.
-                alu_inA = gp_rdata1;
-                alu_inB  = zero_extend_imm(fimm);
-                // Use ALU result as RAM address.
-                ram_addr = alu_result;
-                // Asynchronous read from RAM is valid in the same cycle.
-                gp_reg_we    = 1'b1;
-                gp_reg_wdata = ram_rdata_out1;
+                fd_alu_ctrl = 3'b000;  // Effective address = base + offset
+                fd_reg_we   = 1'b1;    // Write loaded data in WB stage
+                fd_mem_re   = 1'b1;    // Memory read
             end
 
             // 111: STORE.
             3'b111: begin
-                alu_ctrl = 3'b000;            // Compute effective address.
-                alu_inA = gp_rdata1;
-                alu_inB  = zero_extend_imm(fimm);
-                ram_addr = alu_result;
-                // Write the data from the rt register.
-                ram_wdata = gp_rdata2;
-                ram_we    = 1'b1;
+                fd_alu_ctrl   = 3'b000;  // Effective address
+                fd_mem_we     = 1'b1;    // Memory write
+                fd_store_data = fd_rdata2;  // Data to store is from rt
             end
+
             default: begin
-            gp_reg_we = 1'b0;
+                fd_reg_we = 1'b0;
             end
         endcase
-
-        // If the ALU asserts halt, we also set next_halt.
-        if (alu_halt)
-            next_halt = 1'b1;
     end
 
-    //-----------------------------------
+    //----------------------------------------------------------
+    // FD->EM Pipeline Register
+    //----------------------------------------------------------
+    wire [9:0] em_operandA, em_operandB;
+    wire [2:0] em_alu_ctrl, gp_rdata1_address_out, gp_rdata2_address_out;
+    wire       em_reg_we;
+    wire       em_mem_we;
+    wire       em_mem_re;
+    wire [9:0] em_store_data;
+
+    // We'll also capture the source register addresses for forwarding:
+    wire [2:0] fd_srcA_addr = {bank_sel, rs_field};
+    wire [2:0] fd_srcB_addr = dest_reg_fd;
+
+    fd_EX_Mem_reg FD_EM_reg (
+        .clk(clk),
+        .reset(rst),
+        // capture source register addresses for forwarding:
+        .gp_rdata1_address_in(fd_srcA_addr),
+        .gp_rdata1_address_out(gp_rdata1_address_out),
+        .gp_rdata2_address_in(fd_srcB_addr),
+        .gp_rdata2_address_out(gp_rdata2_address_out),
+
+        .aluA_in(alu_inA),
+        .aluA_out(em_operandA),
+        .aluB_in(alu_inB),
+        .aluB_out(em_operandB),
+        .alu_ctrl_in(fd_alu_ctrl),
+        .alu_ctrl_out(em_alu_ctrl),
+        .gp_reg_wb_in(fd_reg_we),
+        .gp_reg_wb_out(em_reg_we),
+        .mem_we_in(fd_mem_we),
+        .mem_we_out(em_mem_we),
+        .mem_re_in(fd_mem_re),
+        .mem_re_out(em_mem_re),
+        .store_data_in(fd_store_data),
+        .store_data_out(em_store_data)
+    );
+    
+    //----------------------------------------------------------  
+    // Forwarding Unit
+    //----------------------------------------------------------
+    // Compare the destination register of the WB stage
+    // with the source registers from the EM stage.
+    wire [9:0] wb_alu_result;
+    wire [9:0] wb_mem_rdata;
+    wire       wb_reg_we;
+    wire       wb_mem_re;
+    wire [2:0] wb_dest;
+    wire       forwardA, forwardB;
+
+    forwarding_unit fw_unit (
+        .exmem_wb_wr(wb_reg_we),            // Write enable from WB stage
+        .ex_dest_reg(wb_dest),              // Destination reg from WB stage
+        .ex_dest_reg_value(wb_alu_result),  // ALU result from WB stage
+        .id_dest_reg(gp_rdata1_address_out),// Current instruction's 1st source
+        .id_src_reg(gp_rdata2_address_out), // Current instruction's 2nd source
+        .forwardA(forwardA),
+        .forwardB(forwardB)
+    );
+
+    // Mux the EM stage ALU inputs to handle forwarding
+    wire [9:0] alu_operandA = (forwardA) ? wb_alu_result : em_operandA;
+    wire [9:0] alu_operandB = (forwardB) ? wb_alu_result : em_operandB;
+
+    //----------------------------------------------------------
+    // Stage 2: Execute + Memory (EM)
+    //----------------------------------------------------------
+    wire [9:0] alu_result;
+    wire       alu_halt;
+
+    ALU ALU_inst (
+        .A(alu_operandA),
+        .B(alu_operandB),
+        .alu_ctrl(em_alu_ctrl),
+        .result(alu_result),
+        .halt(alu_halt)
+    );
+
+    // Data Memory
+    wire [9:0] mem_rdata;
+    wire [9:0] mem_addr  = alu_result;
+    wire [9:0] mem_wdata = (em_mem_we) ? em_store_data : 10'd0;
+
+    ramtask2 RAM_inst (
+        .clk(clk),
+        .we(em_mem_we),
+        .address(mem_addr),
+        .wdata(mem_wdata),
+        .rdata(mem_rdata)
+    );
+
+    //----------------------------------------------------------
+    // EM->WB Pipeline Register
+    //----------------------------------------------------------
+    Exe_Mem_WB_reg EM_WB_reg (
+        .clk(clk), .reset(rst), .alu_result_in(alu_result), .alu_result_out(wb_alu_result),
+        .ram_rdata_in(mem_rdata), .ram_rdata_out(wb_mem_rdata),
+        .gp_reg_wb_in(em_reg_we),.gp_reg_wb_out(wb_reg_we),
+        .mem_re_in(em_mem_re),.mem_re_out(wb_mem_re),
+        .gp_rdata2_address_in(dest_reg_fd), .gp_rdata2_address_out(wb_dest),
+    );
+
+    //----------------------------------------------------------
+    // Stage 3: Writeback (WB)
+    //----------------------------------------------------------
+    reg [9:0] final_wdata;
+    always @(*) begin
+        if (wb_mem_re)
+            final_wdata = wb_mem_rdata;   // load
+        else
+            final_wdata = wb_alu_result;  // ALU result
+    end
+
+    // Drive register file write signals
+    assign wb_wdata = final_wdata;
+    assign wb_waddr = wb_dest[1:0];  // lower 2 bits
+    assign wb_we = wb_reg_we;
+
+    //----------------------------------------------------------
+    // Halt Logic
+    //----------------------------------------------------------
+    always @(posedge clk or posedge rst) begin
+        if (rst)
+            halted_reg <= 1'b0;
+        else if (alu_halt)
+            halted_reg <= 1'b1;
+    end
+
+    //----------------------------------------------------------
     // Helper Functions for Immediate Extension
-    //-----------------------------------
+    //----------------------------------------------------------
     function [9:0] zero_extend_imm;
         input [1:0] imm;
         begin
