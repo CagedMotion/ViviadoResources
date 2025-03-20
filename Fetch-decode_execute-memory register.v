@@ -1,5 +1,5 @@
 module fd_EX_Mem_reg(
-    input wire clk, reset,
+    input wire clk, reset, en,
     input wire [2:0] gp_rdata1_address_in, gp_rdata2_address_in, 
     input wire [9:0] aluA_in, aluB_in,
     input wire [2:0] alu_ctrl_in,
