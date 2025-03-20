@@ -130,28 +130,29 @@ module pipeline_CPU10bits(
     wire       alu_halt;
     reg  [2:0] alu_ctrl;
     ALU ALU_inst (
-        .A(alu_inA),
-        .B(alu_inB),
-        .alu_ctrl(alu_ctrl),
+        .A(alu_outA),
+        .B(alu_outB),
+        .alu_ctrl(alu_ctrl_out),
         .result(alu_result),
         .halt(alu_halt)
     );
-
-
-    assign gp_rdata1_address = {bank_sel,rs_field};
-    assign gp_rdata2_address = {bank_sel, rt_field}; 
-    fd_EX_Mem_reg fd_reg(.clk(clk), .gp_rdata1_address_in(gp_rdata1_address), .gp_rdata2_address_in(gp_rdata2_address),
-                          .gp_rdata1_address_out(gp_rdata1_address), .gp_rdata2_address_out(gp_rdata2_address),
-                          .aluA_in(aluA_in), .aluA_out(aluA_in),
-                          .aluB_in(aluB_in), .aluB_out(aluB_in),
-                          .alu_ctrl_in(alu_ctrl), .alu_ctrl_out(alu_ctrl), .gp_reg_wb_in(gp_reg_we), .gp_reg_wb_out(gp_reg_we),
+    wire [2:0] alu_ctrl_out;
+    wire [9:0] alu_outA, alu_outB;
+    wire [2:0] gp_rdata1_address_out, gp_rdata2_address_out;
+    wire gp_reg_we1, gp_reg_we_out1;
+    assign gp_reg_we1 = gp_reg_we; 
+    fd_EX_Mem_reg fd_reg(.clk(clk), .gp_rdata1_address_in({bank_sel,rs_field}), .gp_rdata2_address_in({bank_sel, rt_field}),
+                          .gp_rdata1_address_out(gp_rdata1_address_out), .gp_rdata2_address_out(gp_rdata2_address_out),
+                          .aluA_in(alu_inA), .aluA_out(alu_outA),
+                          .aluB_in(alu_inB), .aluB_out(alu_outB),
+                          .alu_ctrl_in(alu_ctrl), .alu_ctrl_out(alu_ctrl_out), .gp_reg_wb_in(gp_reg_we1), .gp_reg_wb_out(gp_reg_we_out1),
                           .reset(rst));
 
 
     // the execute memory writeback register for pipelining.
     
-    Exe_Mem_WB_reg EM_reg(.clk(clk), .ram_rdata_in(ram_rdata), .ram_rdata_out(ram_rdata), .gp_reg_wb_in(gp_reg_we), .gp_reg_wb_out(gp_reg_we),
-                          .reset(rst));
+//    Exe_Mem_WB_reg EM_reg(.clk(clk), .ram_rdata_in(ram_rdata), .ram_rdata_out(ram_rdata), .gp_reg_wb_in(gp_reg_we), .gp_reg_wb_out(gp_reg_we),
+//                          .reset(rst));
     //-------------------------------------------------------------------------
     // 8) Sequential State: Halt Signal (PC update is handled in fetch_unit)
     //-------------------------------------------------------------------------
