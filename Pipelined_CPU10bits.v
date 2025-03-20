@@ -150,9 +150,12 @@ module pipeline_CPU10bits(
 
 
     // the execute memory writeback register for pipelining.
-    
-//    Exe_Mem_WB_reg EM_reg(.clk(clk), .ram_rdata_in(ram_rdata), .ram_rdata_out(ram_rdata), .gp_reg_wb_in(gp_reg_we), .gp_reg_wb_out(gp_reg_we),
-//                          .reset(rst));
+    wire [9:0] ram_data_out1;
+    wire [2:0] gp_rdata2_out1;
+    Exe_Mem_WB_reg EM_reg(.clk(clk), .ram_rdata_in(ram_rdata), .ram_rdata_out(ram_rdata_out1), .gp_reg_wb_in(gp_reg_we_out1), .gp_reg_wb_out(gp_reg_we_out2),
+                          .reset(rst), .gp_rdata2_address_in(gp_rdata2_address_out), .gp_rdata2_address_out(gp_rdata2_out1));
+                          
+                          
     //-------------------------------------------------------------------------
     // 8) Sequential State: Halt Signal (PC update is handled in fetch_unit)
     //-------------------------------------------------------------------------
@@ -263,7 +266,7 @@ module pipeline_CPU10bits(
                 ram_addr = alu_result;
                 // Asynchronous read from RAM is valid in the same cycle.
                 gp_reg_we    = 1'b1;
-                gp_reg_wdata = ram_rdata;
+                gp_reg_wdata = ram_rdata_out1;
             end
 
             // 111: STORE.
