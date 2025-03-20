@@ -4,7 +4,6 @@ module forwarding_unit (
     input  wire [9:0]  ex_dest_reg_value, // Value of the Destination register after the execute/memory stage'
     input  wire [2:0]  id_dest_reg,   // First source register from the Decode stage.
     input  wire [2:0]  id_src_reg,   // Second source register from the Decode stage.
-    input  wire        wb,          // Write Back enable bit
     output reg         forwardA,          // Selector bit for Forward A Mux
     output reg         forwardB          // Selector bit for Forward B Mux
 
@@ -13,20 +12,14 @@ module forwarding_unit (
     always @(*) begin
         // If a load instruction in the execute stage writes to a register that is
         // needed by the instruction in the decode stage, assert stall.
-        if (wb == 1'b1) begin
-            if (((exmem_wb_wr == 1'b1) & (ex_dest_reg_value == 10'b0)) & (ex_dest_reg == id_dest_reg)) begin
-                forwardA = 1'b1;
-            end else begin
-                forwardA = 1'b0;
-            end
-            if (((exmem_wb_wr == 1'b1) & (ex_dest_reg_value == 10'b0)) & (ex_dest_reg == id_src_reg)) begin
-                forwardB = 1'b1;
-            end else begin
-                forwardB = 1'b0;
-            end
-        end
-        else begin
+        if (((exmem_wb_wr == 1'b1) & (ex_dest_reg_value == 10'b0)) & (ex_dest_reg == id_dest_reg)) begin
+            forwardA = 1'b1;
+        end else begin
             forwardA = 1'b0;
+        end
+        if (((exmem_wb_wr == 1'b1) & (ex_dest_reg_value == 10'b0)) & (ex_dest_reg == id_src_reg)) begin
+            forwardB = 1'b1;
+        end else begin
             forwardB = 1'b0;
         end
     end
