@@ -24,7 +24,7 @@ module pipeline_CPU10bits(
     assign cpu_halted = halted_reg;
 
     // Stall signal from hazard detection (via forwarding unit)
-    wire stall,FDregstall_out,WBregstall_out;
+    wire stall;
 
     // Instantiate updated Fetch Unit (with stall input)
     fetch_unit FU_inst (
@@ -194,7 +194,6 @@ module pipeline_CPU10bits(
         .clk(clk),
         .reset(rst),
         .stall(stall),  // NEW: propagate stall signal
-        .stall_out(FDregstall_out),
         .gp_rdata1_address_in(fd_srcA_addr),
         .gp_rdata1_address_out(gp_rdata1_address_out),
         .gp_rdata2_address_in(fd_srcB_addr),
@@ -282,10 +281,9 @@ module pipeline_CPU10bits(
         .gp_reg_wb_out(wb_reg_we),
         .mem_re_in(em_mem_re),
         .mem_re_out(wb_mem_re),
-        .gp_rdata2_address_in(dest_reg_fd), 
+        .gp_rdata2_address_in(gp_rdata2_address_out), 
         .gp_rdata2_address_out(wb_dest),
-        .stall_in(FDregstall_out),
-        .stall_out(WBregstall_out)
+        .stall(stall)
     );
 
     //----------------------------------------------------------
@@ -302,7 +300,7 @@ module pipeline_CPU10bits(
     // Drive register file write signals
     assign wb_wdata = final_wdata;
     assign wb_waddr = wb_dest[1:0];  // lower 2 bits
-    assign wb_we = (WBregstall_out == 1'b0) ? wb_reg_we : 1'b0;
+    assign wb_we = (stall == 1'b1) ? 1'b0 : wb_reg_we;
 
     //----------------------------------------------------------
     // Halt Logic

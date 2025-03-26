@@ -12,12 +12,12 @@
    </db_ref_list>
    <zoom_setting>
       <ZoomStartTime time="0.000 ns"></ZoomStartTime>
-      <ZoomEndTime time="222.501 ns"></ZoomEndTime>
-      <Cursor1Time time="30.000 ns"></Cursor1Time>
+      <ZoomEndTime time="72.801 ns"></ZoomEndTime>
+      <Cursor1Time time="34.600 ns"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
       <NameColumnWidth column_width="216"></NameColumnWidth>
-      <ValueColumnWidth column_width="95"></ValueColumnWidth>
+      <ValueColumnWidth column_width="87"></ValueColumnWidth>
    </column_width_setting>
    <WVObjectSize size="17" />
    <wvobject fp_name="/tb_pipeline_cpu10bits/clk" type="logic">
@@ -69,6 +69,7 @@
    <wvobject fp_name="group30" type="group">
       <obj_property name="label">Fetch Unit</obj_property>
       <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="isExpanded"></obj_property>
       <wvobject fp_name="/tb_pipeline_cpu10bits/dut/FU_inst/clk" type="logic">
          <obj_property name="ElementShortName">clk</obj_property>
          <obj_property name="ObjectShortName">clk</obj_property>
@@ -589,6 +590,10 @@
       <wvobject fp_name="/tb_pipeline_cpu10bits/dut/EM_WB_reg/reset" type="logic">
          <obj_property name="ElementShortName">reset</obj_property>
          <obj_property name="ObjectShortName">reset</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/EM_WB_reg/stall" type="logic">
+         <obj_property name="ElementShortName">stall</obj_property>
+         <obj_property name="ObjectShortName">stall</obj_property>
       </wvobject>
       <wvobject fp_name="/tb_pipeline_cpu10bits/dut/EM_WB_reg/alu_result_in" type="array">
          <obj_property name="ElementShortName">alu_result_in[9:0]</obj_property>
