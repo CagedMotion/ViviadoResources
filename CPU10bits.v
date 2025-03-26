@@ -18,6 +18,7 @@ module CPU10bits(
     // Halt signal for the fetch unit
     reg halted_reg;
     reg next_halt;
+    wire stall = 1'b0;
     assign cpu_halted = halted_reg;
 
     //-------------------------------------------------------------------------
@@ -31,6 +32,7 @@ module CPU10bits(
         .reset(rst),
         .halted(halted_reg),
         .branch(branch_sig),
+        .stall(stall),
         .jump(jump_sig),
         .branch_addr(branch_target),
         .jump_target(jump_target),
@@ -42,17 +44,17 @@ module CPU10bits(
     //    Use the PC from the fetch unit to index into ROM.
     //-------------------------------------------------------------------------
     wire [9:0] instr;
-    task1rom ROM_inst (
-        .address(pc),
-        .clk(clk),           // clk not strictly required if ROM is asynchronous
-        .read_data(instr)
-    );
-
-//    task2rom ROM_inst (
+//    task1rom ROM_inst (
 //        .address(pc),
 //        .clk(clk),           // clk not strictly required if ROM is asynchronous
 //        .read_data(instr)
 //    );
+
+    task2rom ROM_inst (
+        .address(pc),
+        .clk(clk),           // clk not strictly required if ROM is asynchronous
+        .read_data(instr)
+    );
 
 //    task3rom ROM_inst (
 //        .address(pc),
@@ -67,20 +69,20 @@ module CPU10bits(
     reg  [9:0] ram_wdata;
     reg        ram_we;
     wire [9:0] ram_rdata;
-    ramtask1 RAM_inst (
-        .clk(clk),
-        .we(ram_we),
-        .address(ram_addr),
-        .wdata(ram_wdata),
-        .rdata(ram_rdata)
-    );
-//    ramtask2 RAM_inst (
+//    ramtask1 RAM_inst (
 //        .clk(clk),
 //        .we(ram_we),
 //        .address(ram_addr),
 //        .wdata(ram_wdata),
 //        .rdata(ram_rdata)
 //    );
+    ramtask2 RAM_inst (
+        .clk(clk),
+        .we(ram_we),
+        .address(ram_addr),
+        .wdata(ram_wdata),
+        .rdata(ram_rdata)
+    );
 //    ramtask3 RAM_inst (
 //        .clk(clk),
 //        .we(ram_we),
@@ -325,18 +327,18 @@ module tb_cpu10bits;
         #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
         #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
         #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
+        #PERIOD;#PERIOD;#PERIOD;#PERIOD;//#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
+//        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
+//        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
+//        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
+//        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
+//        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
+//        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
+//        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
+//        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
+//        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
+//        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
+//        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
 //        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
 //        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
 //        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;

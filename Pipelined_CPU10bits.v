@@ -23,11 +23,15 @@ module pipeline_CPU10bits(
     reg halted_reg;
     assign cpu_halted = halted_reg;
 
-    // Instantiate Fetch Unit
+    // Stall signal from hazard detection (via forwarding unit)
+    wire stall;
+
+    // Instantiate updated Fetch Unit (with stall input)
     fetch_unit FU_inst (
         .clk(clk),
         .reset(rst),
         .halted(halted_reg),
+        .stall(stall),           
         .branch(branch_sig),
         .jump(jump_sig),
         .branch_addr(branch_target),
@@ -38,12 +42,10 @@ module pipeline_CPU10bits(
     // Instruction Memory (ROM)
     task2rom ROM_inst (
         .address(pc),
-        .clk(clk),
         .read_data(instr)
     );
 
-    // Decode the instruction fields
-    // according to ISA design.
+    // Decode the instruction fields according to ISA design.
     wire [2:0] opcode   = instr[9:7];
     wire [1:0] rs_field = instr[6:5];
     wire [1:0] rt_field = instr[4:3];
@@ -54,7 +56,7 @@ module pipeline_CPU10bits(
     // Derive destination register as 3 bits: {bank_sel, rt_field}
     wire [2:0] dest_reg_fd = {bank_sel, rt_field};
 
-    // Register File (placeholder or your own)
+    // Register File
     wire [9:0] fd_rdata1, fd_rdata2;
     wire [9:0] wb_wdata;
     wire [1:0] wb_waddr;
@@ -72,7 +74,7 @@ module pipeline_CPU10bits(
         .rdata2(fd_rdata2)
     );
 
-    // Signals for FD stage (latched into FD->EM pipeline register)
+    // Signals for FD stage (to be latched into FD->EM pipeline register)
     reg  [9:0] alu_inA, alu_inB;
     reg  [2:0] fd_alu_ctrl;
     reg        fd_reg_we;
@@ -81,7 +83,7 @@ module pipeline_CPU10bits(
     reg        fd_bank_sel;
     reg  [9:0] fd_store_data; // Data to be stored for STORE instructions
 
-    // FD Stage Decoding
+    // FD Stage Decoding (same as before)
     always @(*) begin
         // Defaults
         fd_alu_ctrl   = 3'b000;
@@ -175,8 +177,12 @@ module pipeline_CPU10bits(
     end
 
     //----------------------------------------------------------
-    // FD->EM Pipeline Register
+    // FD->EM Pipeline Register (updated with stall)
     //----------------------------------------------------------
+    // Compute the source addresses from FD stage for hazard detection:
+    wire [2:0] fd_srcA_addr = {bank_sel, rs_field};
+    wire [2:0] fd_srcB_addr = dest_reg_fd; // Note: for simplicity, we use the same as dest_reg_fd
+
     wire [9:0] em_operandA, em_operandB;
     wire [2:0] em_alu_ctrl, gp_rdata1_address_out, gp_rdata2_address_out;
     wire       em_reg_we;
@@ -184,19 +190,14 @@ module pipeline_CPU10bits(
     wire       em_mem_re;
     wire [9:0] em_store_data;
 
-    // We'll also capture the source register addresses for forwarding:
-    wire [2:0] fd_srcA_addr = {bank_sel, rs_field};
-    wire [2:0] fd_srcB_addr = dest_reg_fd;
-
     fd_EX_Mem_reg FD_EM_reg (
         .clk(clk),
         .reset(rst),
-        // capture source register addresses for forwarding:
+        .stall(stall),  // NEW: propagate stall signal
         .gp_rdata1_address_in(fd_srcA_addr),
         .gp_rdata1_address_out(gp_rdata1_address_out),
         .gp_rdata2_address_in(fd_srcB_addr),
         .gp_rdata2_address_out(gp_rdata2_address_out),
-
         .aluA_in(alu_inA),
         .aluA_out(em_operandA),
         .aluB_in(alu_inB),
@@ -213,11 +214,10 @@ module pipeline_CPU10bits(
         .store_data_out(em_store_data)
     );
     
-    //----------------------------------------------------------  
-    // Forwarding Unit
     //----------------------------------------------------------
-    // Compare the destination register of the WB stage
-    // with the source registers from the EM stage.
+    // Forwarding Unit (updated to generate a stall signal)
+    //----------------------------------------------------------
+    // Here we use em_mem_re as the indicator that the previous instruction is a load.
     wire [9:0] wb_alu_result;
     wire [9:0] wb_mem_rdata;
     wire       wb_reg_we;
@@ -226,16 +226,17 @@ module pipeline_CPU10bits(
     wire       forwardA, forwardB;
 
     forwarding_unit fw_unit (
-        .exmem_wb_wr(wb_reg_we),            // Write enable from WB stage
-        .ex_dest_reg(wb_dest),              // Destination reg from WB stage
-        .ex_dest_reg_value(wb_alu_result),  // ALU result from WB stage
-        .id_dest_reg(gp_rdata1_address_out),// Current instruction's 1st source
-        .id_src_reg(gp_rdata2_address_out), // Current instruction's 2nd source
+        .exmem_wb_wr(wb_reg_we),
+        .ex_is_load(em_mem_re),  // load indicator from EM stage
+        .ex_dest_reg(wb_dest),
+        .id_dest_reg(gp_rdata2_address_out),
+        .id_src_reg(gp_rdata1_address_out),
         .forwardA(forwardA),
-        .forwardB(forwardB)
+        .forwardB(forwardB),
+        .stall(stall)
     );
 
-    // Mux the EM stage ALU inputs to handle forwarding
+    // Mux the EM stage ALU inputs to handle forwarding.
     wire [9:0] alu_operandA = (forwardA) ? wb_alu_result : em_operandA;
     wire [9:0] alu_operandB = (forwardB) ? wb_alu_result : em_operandB;
 
@@ -270,21 +271,29 @@ module pipeline_CPU10bits(
     // EM->WB Pipeline Register
     //----------------------------------------------------------
     Exe_Mem_WB_reg EM_WB_reg (
-        .clk(clk), .reset(rst), .alu_result_in(alu_result), .alu_result_out(wb_alu_result),
-        .ram_rdata_in(mem_rdata), .ram_rdata_out(wb_mem_rdata),
-        .gp_reg_wb_in(em_reg_we),.gp_reg_wb_out(wb_reg_we),
-        .mem_re_in(em_mem_re),.mem_re_out(wb_mem_re),
-        .gp_rdata2_address_in(dest_reg_fd), .gp_rdata2_address_out(wb_dest));
+        .clk(clk), 
+        .reset(rst), 
+        .alu_result_in(alu_result), 
+        .alu_result_out(wb_alu_result),
+        .ram_rdata_in(mem_rdata), 
+        .ram_rdata_out(wb_mem_rdata),
+        .gp_reg_wb_in(em_reg_we),
+        .gp_reg_wb_out(wb_reg_we),
+        .mem_re_in(em_mem_re),
+        .mem_re_out(wb_mem_re),
+        .gp_rdata2_address_in(dest_reg_fd), 
+        .gp_rdata2_address_out(wb_dest)
+    );
 
     //----------------------------------------------------------
     // Stage 3: Writeback (WB)
     //----------------------------------------------------------
     reg [9:0] final_wdata;
-    always @(posedge clk) begin
+    always @(wb_mem_re, wb_mem_rdata, wb_alu_result) begin
         if (wb_mem_re)
-            final_wdata = wb_mem_rdata;   // load
+            final_wdata <= wb_mem_rdata;   // load
         else
-            final_wdata = wb_alu_result;  // ALU result
+            final_wdata <= wb_alu_result;    // ALU result
     end
 
     // Drive register file write signals
@@ -355,10 +364,10 @@ module tb_pipeline_cpu10bits;
         #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
         #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
         #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
+//        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
+//        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
+//        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
+//        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
 //        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
 //        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
 //        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
