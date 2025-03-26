@@ -2,7 +2,9 @@
 
 module fd_EX_Mem_reg(
     input  wire clk, reset,
+    
     input  wire stall,  // NEW: Stall signal from control logic.
+    output wire stall_out,
 
     // Address fields for register file operands (already 3-bit)
     input  wire [2:0] gp_rdata1_address_in, gp_rdata2_address_in,
@@ -63,6 +65,9 @@ module fd_EX_Mem_reg(
     
     // Latch memory read enable (1 bit)
     register_1bit REG_mem_re(.clk(clk), .reset(reset), .en(en), .din(mem_re_in), .dout(mem_re_out));
+    
+    // Stall Signal
+    register_1bit REG_stall(.clk(clk), .reset(reset), .en(en), .din(stall), .dout(stall_out));
     
 endmodule
 

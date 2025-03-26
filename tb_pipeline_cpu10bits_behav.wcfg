@@ -1,0 +1,681 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wave_config>
+   <wave_state>
+   </wave_state>
+   <db_ref_list>
+      <db_ref path="tb_pipeline_cpu10bits_behav.wdb" id="1">
+         <top_modules>
+            <top_module name="glbl" />
+            <top_module name="tb_pipeline_cpu10bits" />
+         </top_modules>
+      </db_ref>
+   </db_ref_list>
+   <zoom_setting>
+      <ZoomStartTime time="0.000 ns"></ZoomStartTime>
+      <ZoomEndTime time="222.501 ns"></ZoomEndTime>
+      <Cursor1Time time="30.000 ns"></Cursor1Time>
+   </zoom_setting>
+   <column_width_setting>
+      <NameColumnWidth column_width="216"></NameColumnWidth>
+      <ValueColumnWidth column_width="95"></ValueColumnWidth>
+   </column_width_setting>
+   <WVObjectSize size="17" />
+   <wvobject fp_name="/tb_pipeline_cpu10bits/clk" type="logic">
+      <obj_property name="ElementShortName">clk</obj_property>
+      <obj_property name="ObjectShortName">clk</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_pipeline_cpu10bits/rst" type="logic">
+      <obj_property name="ElementShortName">rst</obj_property>
+      <obj_property name="ObjectShortName">rst</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_pipeline_cpu10bits/PERIOD" type="array">
+      <obj_property name="ElementShortName">PERIOD[31:0]</obj_property>
+      <obj_property name="ObjectShortName">PERIOD[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="group31" type="group">
+      <obj_property name="label">Program counter</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="isExpanded"></obj_property>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/pc" type="array">
+         <obj_property name="ElementShortName">pc[9:0]</obj_property>
+         <obj_property name="ObjectShortName">pc[9:0]</obj_property>
+         <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/instr" type="array">
+         <obj_property name="ElementShortName">instr[9:0]</obj_property>
+         <obj_property name="ObjectShortName">instr[9:0]</obj_property>
+         <obj_property name="Radix">BINARYRADIX</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject fp_name="group4" type="group">
+      <obj_property name="label">ROM</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="isExpanded"></obj_property>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/ROM_inst/read_data" type="array">
+         <obj_property name="ElementShortName">read_data[9:0]</obj_property>
+         <obj_property name="ObjectShortName">read_data[9:0]</obj_property>
+         <obj_property name="Radix">BINARYRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/ROM_inst/address" type="array">
+         <obj_property name="ElementShortName">address[9:0]</obj_property>
+         <obj_property name="ObjectShortName">address[9:0]</obj_property>
+         <obj_property name="Radix">BINARYRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/ROM_inst/memory" type="array">
+         <obj_property name="ElementShortName">memory[1023:0][9:0]</obj_property>
+         <obj_property name="ObjectShortName">memory[1023:0][9:0]</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject fp_name="group30" type="group">
+      <obj_property name="label">Fetch Unit</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/FU_inst/clk" type="logic">
+         <obj_property name="ElementShortName">clk</obj_property>
+         <obj_property name="ObjectShortName">clk</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/FU_inst/reset" type="logic">
+         <obj_property name="ElementShortName">reset</obj_property>
+         <obj_property name="ObjectShortName">reset</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/FU_inst/halted" type="logic">
+         <obj_property name="ElementShortName">halted</obj_property>
+         <obj_property name="ObjectShortName">halted</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/FU_inst/branch" type="logic">
+         <obj_property name="ElementShortName">branch</obj_property>
+         <obj_property name="ObjectShortName">branch</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/FU_inst/jump" type="logic">
+         <obj_property name="ElementShortName">jump</obj_property>
+         <obj_property name="ObjectShortName">jump</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/FU_inst/branch_addr" type="array">
+         <obj_property name="ElementShortName">branch_addr[9:0]</obj_property>
+         <obj_property name="ObjectShortName">branch_addr[9:0]</obj_property>
+         <obj_property name="Radix">HEXRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/FU_inst/jump_target" type="array">
+         <obj_property name="ElementShortName">jump_target[9:0]</obj_property>
+         <obj_property name="ObjectShortName">jump_target[9:0]</obj_property>
+         <obj_property name="Radix">HEXRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/FU_inst/pc_out" type="array">
+         <obj_property name="ElementShortName">pc_out[9:0]</obj_property>
+         <obj_property name="ObjectShortName">pc_out[9:0]</obj_property>
+         <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/FU_inst/pc_plus_one" type="array">
+         <obj_property name="ElementShortName">pc_plus_one[9:0]</obj_property>
+         <obj_property name="ObjectShortName">pc_plus_one[9:0]</obj_property>
+         <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/FU_inst/next_pc" type="array">
+         <obj_property name="ElementShortName">next_pc[9:0]</obj_property>
+         <obj_property name="ObjectShortName">next_pc[9:0]</obj_property>
+         <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject fp_name="group55" type="group">
+      <obj_property name="label">ALU</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="isExpanded"></obj_property>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/ALU_inst/A" type="array">
+         <obj_property name="ElementShortName">A[9:0]</obj_property>
+         <obj_property name="ObjectShortName">A[9:0]</obj_property>
+         <obj_property name="Radix">BINARYRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/ALU_inst/B" type="array">
+         <obj_property name="ElementShortName">B[9:0]</obj_property>
+         <obj_property name="ObjectShortName">B[9:0]</obj_property>
+         <obj_property name="Radix">BINARYRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/ALU_inst/alu_ctrl" type="array">
+         <obj_property name="ElementShortName">alu_ctrl[2:0]</obj_property>
+         <obj_property name="ObjectShortName">alu_ctrl[2:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/ALU_inst/result" type="array">
+         <obj_property name="ElementShortName">result[9:0]</obj_property>
+         <obj_property name="ObjectShortName">result[9:0]</obj_property>
+         <obj_property name="Radix">BINARYRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/ALU_inst/halt" type="logic">
+         <obj_property name="ElementShortName">halt</obj_property>
+         <obj_property name="ObjectShortName">halt</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/ALU_inst/add_result" type="array">
+         <obj_property name="ElementShortName">add_result[9:0]</obj_property>
+         <obj_property name="ObjectShortName">add_result[9:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/ALU_inst/add_cout" type="logic">
+         <obj_property name="ElementShortName">add_cout</obj_property>
+         <obj_property name="ObjectShortName">add_cout</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/ALU_inst/B_inverted" type="array">
+         <obj_property name="ElementShortName">B_inverted[9:0]</obj_property>
+         <obj_property name="ObjectShortName">B_inverted[9:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/ALU_inst/sub_result" type="array">
+         <obj_property name="ElementShortName">sub_result[9:0]</obj_property>
+         <obj_property name="ObjectShortName">sub_result[9:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/ALU_inst/sub_cout" type="logic">
+         <obj_property name="ElementShortName">sub_cout</obj_property>
+         <obj_property name="ObjectShortName">sub_cout</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/ALU_inst/nand_result" type="array">
+         <obj_property name="ElementShortName">nand_result[9:0]</obj_property>
+         <obj_property name="ObjectShortName">nand_result[9:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/ALU_inst/slr_result" type="array">
+         <obj_property name="ElementShortName">slr_result[9:0]</obj_property>
+         <obj_property name="ObjectShortName">slr_result[9:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/ALU_inst/sll_result" type="array">
+         <obj_property name="ElementShortName">sll_result[9:0]</obj_property>
+         <obj_property name="ObjectShortName">sll_result[9:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/ALU_inst/slt_result" type="array">
+         <obj_property name="ElementShortName">slt_result[9:0]</obj_property>
+         <obj_property name="ObjectShortName">slt_result[9:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/ALU_inst/equal_result" type="array">
+         <obj_property name="ElementShortName">equal_result[9:0]</obj_property>
+         <obj_property name="ObjectShortName">equal_result[9:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/ALU_inst/temp_equal" type="array">
+         <obj_property name="ElementShortName">temp_equal[9:0]</obj_property>
+         <obj_property name="ObjectShortName">temp_equal[9:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/ALU_inst/alu_out" type="array">
+         <obj_property name="ElementShortName">alu_out[9:0]</obj_property>
+         <obj_property name="ObjectShortName">alu_out[9:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/ALU_inst/halt_flag" type="logic">
+         <obj_property name="ElementShortName">halt_flag</obj_property>
+         <obj_property name="ObjectShortName">halt_flag</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject fp_name="group74" type="group">
+      <obj_property name="label">RAM</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/RAM_inst/rdata" type="array">
+         <obj_property name="ElementShortName">rdata[9:0]</obj_property>
+         <obj_property name="ObjectShortName">rdata[9:0]</obj_property>
+         <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/RAM_inst/clk" type="logic">
+         <obj_property name="ElementShortName">clk</obj_property>
+         <obj_property name="ObjectShortName">clk</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/RAM_inst/we" type="logic">
+         <obj_property name="ElementShortName">we</obj_property>
+         <obj_property name="ObjectShortName">we</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/RAM_inst/address" type="array">
+         <obj_property name="ElementShortName">address[9:0]</obj_property>
+         <obj_property name="ObjectShortName">address[9:0]</obj_property>
+         <obj_property name="Radix">BINARYRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/RAM_inst/wdata" type="array">
+         <obj_property name="ElementShortName">wdata[9:0]</obj_property>
+         <obj_property name="ObjectShortName">wdata[9:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/RAM_inst/ram" type="array">
+         <obj_property name="ElementShortName">ram[1023:0][9:0]</obj_property>
+         <obj_property name="ObjectShortName">ram[1023:0][9:0]</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject fp_name="group75" type="group">
+      <obj_property name="label">Register File</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="isExpanded"></obj_property>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/RF_inst/clk" type="logic">
+         <obj_property name="ElementShortName">clk</obj_property>
+         <obj_property name="ObjectShortName">clk</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/RF_inst/rst" type="logic">
+         <obj_property name="ElementShortName">rst</obj_property>
+         <obj_property name="ObjectShortName">rst</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/RF_inst/we" type="logic">
+         <obj_property name="ElementShortName">we</obj_property>
+         <obj_property name="ObjectShortName">we</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/RF_inst/bank_sel" type="logic">
+         <obj_property name="ElementShortName">bank_sel</obj_property>
+         <obj_property name="ObjectShortName">bank_sel</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/RF_inst/waddr" type="array">
+         <obj_property name="ElementShortName">waddr[1:0]</obj_property>
+         <obj_property name="ObjectShortName">waddr[1:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/RF_inst/wdata" type="array">
+         <obj_property name="ElementShortName">wdata[9:0]</obj_property>
+         <obj_property name="ObjectShortName">wdata[9:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/RF_inst/raddr1" type="array">
+         <obj_property name="ElementShortName">raddr1[1:0]</obj_property>
+         <obj_property name="ObjectShortName">raddr1[1:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/RF_inst/raddr2" type="array">
+         <obj_property name="ElementShortName">raddr2[1:0]</obj_property>
+         <obj_property name="ObjectShortName">raddr2[1:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/RF_inst/rdata1" type="array">
+         <obj_property name="ElementShortName">rdata1[9:0]</obj_property>
+         <obj_property name="ObjectShortName">rdata1[9:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/RF_inst/rdata2" type="array">
+         <obj_property name="ElementShortName">rdata2[9:0]</obj_property>
+         <obj_property name="ObjectShortName">rdata2[9:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/RF_inst/r1" type="array">
+         <obj_property name="ElementShortName">r1[9:0]</obj_property>
+         <obj_property name="ObjectShortName">r1[9:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/RF_inst/r2" type="array">
+         <obj_property name="ElementShortName">r2[9:0]</obj_property>
+         <obj_property name="ObjectShortName">r2[9:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/RF_inst/r3" type="array">
+         <obj_property name="ElementShortName">r3[9:0]</obj_property>
+         <obj_property name="ObjectShortName">r3[9:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/RF_inst/r4" type="array">
+         <obj_property name="ElementShortName">r4[9:0]</obj_property>
+         <obj_property name="ObjectShortName">r4[9:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/RF_inst/r5" type="array">
+         <obj_property name="ElementShortName">r5[9:0]</obj_property>
+         <obj_property name="ObjectShortName">r5[9:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/RF_inst/r6" type="array">
+         <obj_property name="ElementShortName">r6[9:0]</obj_property>
+         <obj_property name="ObjectShortName">r6[9:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/RF_inst/r7" type="array">
+         <obj_property name="ElementShortName">r7[9:0]</obj_property>
+         <obj_property name="ObjectShortName">r7[9:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/RF_inst/r8" type="array">
+         <obj_property name="ElementShortName">r8[9:0]</obj_property>
+         <obj_property name="ObjectShortName">r8[9:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/RF_inst/rwe" type="array">
+         <obj_property name="ElementShortName">rwe[7:0]</obj_property>
+         <obj_property name="ObjectShortName">rwe[7:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/RF_inst/write_selector" type="array">
+         <obj_property name="ElementShortName">write_selector[2:0]</obj_property>
+         <obj_property name="ObjectShortName">write_selector[2:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/RF_inst/read_selector0" type="array">
+         <obj_property name="ElementShortName">read_selector0[2:0]</obj_property>
+         <obj_property name="ObjectShortName">read_selector0[2:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/RF_inst/read_selector1" type="array">
+         <obj_property name="ElementShortName">read_selector1[2:0]</obj_property>
+         <obj_property name="ObjectShortName">read_selector1[2:0]</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject fp_name="group104" type="group">
+      <obj_property name="label">t0</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="isExpanded"></obj_property>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/RF_inst/t0/dout" type="array">
+         <obj_property name="ElementShortName">dout[9:0]</obj_property>
+         <obj_property name="ObjectShortName">dout[9:0]</obj_property>
+         <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/RF_inst/t0/clk" type="logic">
+         <obj_property name="ElementShortName">clk</obj_property>
+         <obj_property name="ObjectShortName">clk</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/RF_inst/t0/reset" type="logic">
+         <obj_property name="ElementShortName">reset</obj_property>
+         <obj_property name="ObjectShortName">reset</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/RF_inst/t0/en" type="logic">
+         <obj_property name="ElementShortName">en</obj_property>
+         <obj_property name="ObjectShortName">en</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/RF_inst/t0/din" type="array">
+         <obj_property name="ElementShortName">din[9:0]</obj_property>
+         <obj_property name="ObjectShortName">din[9:0]</obj_property>
+         <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/RF_inst/t0/internal_dout" type="array">
+         <obj_property name="ElementShortName">internal_dout[9:0]</obj_property>
+         <obj_property name="ObjectShortName">internal_dout[9:0]</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject fp_name="group105" type="group">
+      <obj_property name="label">t1</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="isExpanded"></obj_property>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/RF_inst/t1/dout" type="array">
+         <obj_property name="ElementShortName">dout[9:0]</obj_property>
+         <obj_property name="ObjectShortName">dout[9:0]</obj_property>
+         <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/RF_inst/t1/clk" type="logic">
+         <obj_property name="ElementShortName">clk</obj_property>
+         <obj_property name="ObjectShortName">clk</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/RF_inst/t1/reset" type="logic">
+         <obj_property name="ElementShortName">reset</obj_property>
+         <obj_property name="ObjectShortName">reset</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/RF_inst/t1/en" type="logic">
+         <obj_property name="ElementShortName">en</obj_property>
+         <obj_property name="ObjectShortName">en</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/RF_inst/t1/din" type="array">
+         <obj_property name="ElementShortName">din[9:0]</obj_property>
+         <obj_property name="ObjectShortName">din[9:0]</obj_property>
+         <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/RF_inst/t1/internal_dout" type="array">
+         <obj_property name="ElementShortName">internal_dout[9:0]</obj_property>
+         <obj_property name="ObjectShortName">internal_dout[9:0]</obj_property>
+         <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject fp_name="group106" type="group">
+      <obj_property name="label">s0</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="isExpanded"></obj_property>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/RF_inst/s0/dout" type="array">
+         <obj_property name="ElementShortName">dout[9:0]</obj_property>
+         <obj_property name="ObjectShortName">dout[9:0]</obj_property>
+         <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/RF_inst/s0/clk" type="logic">
+         <obj_property name="ElementShortName">clk</obj_property>
+         <obj_property name="ObjectShortName">clk</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/RF_inst/s0/reset" type="logic">
+         <obj_property name="ElementShortName">reset</obj_property>
+         <obj_property name="ObjectShortName">reset</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/RF_inst/s0/en" type="logic">
+         <obj_property name="ElementShortName">en</obj_property>
+         <obj_property name="ObjectShortName">en</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/RF_inst/s0/din" type="array">
+         <obj_property name="ElementShortName">din[9:0]</obj_property>
+         <obj_property name="ObjectShortName">din[9:0]</obj_property>
+         <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/RF_inst/s0/internal_dout" type="array">
+         <obj_property name="ElementShortName">internal_dout[9:0]</obj_property>
+         <obj_property name="ObjectShortName">internal_dout[9:0]</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject fp_name="group107" type="group">
+      <obj_property name="label">s1</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="isExpanded"></obj_property>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/RF_inst/s1/dout" type="array">
+         <obj_property name="ElementShortName">dout[9:0]</obj_property>
+         <obj_property name="ObjectShortName">dout[9:0]</obj_property>
+         <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/RF_inst/s1/clk" type="logic">
+         <obj_property name="ElementShortName">clk</obj_property>
+         <obj_property name="ObjectShortName">clk</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/RF_inst/s1/reset" type="logic">
+         <obj_property name="ElementShortName">reset</obj_property>
+         <obj_property name="ObjectShortName">reset</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/RF_inst/s1/en" type="logic">
+         <obj_property name="ElementShortName">en</obj_property>
+         <obj_property name="ObjectShortName">en</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/RF_inst/s1/din" type="array">
+         <obj_property name="ElementShortName">din[9:0]</obj_property>
+         <obj_property name="ObjectShortName">din[9:0]</obj_property>
+         <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/RF_inst/s1/internal_dout" type="array">
+         <obj_property name="ElementShortName">internal_dout[9:0]</obj_property>
+         <obj_property name="ObjectShortName">internal_dout[9:0]</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject fp_name="group101" type="group">
+      <obj_property name="label">Extras</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="isExpanded"></obj_property>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/instr" type="array">
+         <obj_property name="ElementShortName">instr[9:0]</obj_property>
+         <obj_property name="ObjectShortName">instr[9:0]</obj_property>
+         <obj_property name="Radix">BINARYRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/opcode" type="array">
+         <obj_property name="ElementShortName">opcode[2:0]</obj_property>
+         <obj_property name="ObjectShortName">opcode[2:0]</obj_property>
+         <obj_property name="Radix">BINARYRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/rs_field" type="array">
+         <obj_property name="ElementShortName">rs_field[1:0]</obj_property>
+         <obj_property name="ObjectShortName">rs_field[1:0]</obj_property>
+         <obj_property name="Radix">BINARYRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/rt_field" type="array">
+         <obj_property name="ElementShortName">rt_field[1:0]</obj_property>
+         <obj_property name="ObjectShortName">rt_field[1:0]</obj_property>
+         <obj_property name="Radix">BINARYRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/bank_sel" type="logic">
+         <obj_property name="ElementShortName">bank_sel</obj_property>
+         <obj_property name="ObjectShortName">bank_sel</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/fimm" type="array">
+         <obj_property name="ElementShortName">fimm[1:0]</obj_property>
+         <obj_property name="ObjectShortName">fimm[1:0]</obj_property>
+         <obj_property name="Radix">BINARYRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/jmp_addr" type="array">
+         <obj_property name="ElementShortName">jmp_addr[6:0]</obj_property>
+         <obj_property name="ObjectShortName">jmp_addr[6:0]</obj_property>
+         <obj_property name="Radix">BINARYRADIX</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject fp_name="group108" type="group">
+      <obj_property name="label">FD_EXE/MEM reg</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="isExpanded"></obj_property>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/FD_EM_reg/clk" type="logic">
+         <obj_property name="ElementShortName">clk</obj_property>
+         <obj_property name="ObjectShortName">clk</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/FD_EM_reg/reset" type="logic">
+         <obj_property name="ElementShortName">reset</obj_property>
+         <obj_property name="ObjectShortName">reset</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/FD_EM_reg/stall" type="logic">
+         <obj_property name="ElementShortName">stall</obj_property>
+         <obj_property name="ObjectShortName">stall</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/FD_EM_reg/gp_rdata1_address_in" type="array">
+         <obj_property name="ElementShortName">gp_rdata1_address_in[2:0]</obj_property>
+         <obj_property name="ObjectShortName">gp_rdata1_address_in[2:0]</obj_property>
+         <obj_property name="Radix">BINARYRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/FD_EM_reg/gp_rdata2_address_in" type="array">
+         <obj_property name="ElementShortName">gp_rdata2_address_in[2:0]</obj_property>
+         <obj_property name="ObjectShortName">gp_rdata2_address_in[2:0]</obj_property>
+         <obj_property name="Radix">BINARYRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/FD_EM_reg/aluA_in" type="array">
+         <obj_property name="ElementShortName">aluA_in[9:0]</obj_property>
+         <obj_property name="ObjectShortName">aluA_in[9:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/FD_EM_reg/aluB_in" type="array">
+         <obj_property name="ElementShortName">aluB_in[9:0]</obj_property>
+         <obj_property name="ObjectShortName">aluB_in[9:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/FD_EM_reg/alu_ctrl_in" type="array">
+         <obj_property name="ElementShortName">alu_ctrl_in[2:0]</obj_property>
+         <obj_property name="ObjectShortName">alu_ctrl_in[2:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/FD_EM_reg/gp_reg_wb_in" type="logic">
+         <obj_property name="ElementShortName">gp_reg_wb_in</obj_property>
+         <obj_property name="ObjectShortName">gp_reg_wb_in</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/FD_EM_reg/mem_we_in" type="logic">
+         <obj_property name="ElementShortName">mem_we_in</obj_property>
+         <obj_property name="ObjectShortName">mem_we_in</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/FD_EM_reg/mem_re_in" type="logic">
+         <obj_property name="ElementShortName">mem_re_in</obj_property>
+         <obj_property name="ObjectShortName">mem_re_in</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/FD_EM_reg/store_data_in" type="array">
+         <obj_property name="ElementShortName">store_data_in[9:0]</obj_property>
+         <obj_property name="ObjectShortName">store_data_in[9:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/FD_EM_reg/gp_rdata1_address_out" type="array">
+         <obj_property name="ElementShortName">gp_rdata1_address_out[2:0]</obj_property>
+         <obj_property name="ObjectShortName">gp_rdata1_address_out[2:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/FD_EM_reg/gp_rdata2_address_out" type="array">
+         <obj_property name="ElementShortName">gp_rdata2_address_out[2:0]</obj_property>
+         <obj_property name="ObjectShortName">gp_rdata2_address_out[2:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/FD_EM_reg/aluA_out" type="array">
+         <obj_property name="ElementShortName">aluA_out[9:0]</obj_property>
+         <obj_property name="ObjectShortName">aluA_out[9:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/FD_EM_reg/aluB_out" type="array">
+         <obj_property name="ElementShortName">aluB_out[9:0]</obj_property>
+         <obj_property name="ObjectShortName">aluB_out[9:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/FD_EM_reg/alu_ctrl_out" type="array">
+         <obj_property name="ElementShortName">alu_ctrl_out[2:0]</obj_property>
+         <obj_property name="ObjectShortName">alu_ctrl_out[2:0]</obj_property>
+         <obj_property name="Radix">BINARYRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/FD_EM_reg/gp_reg_wb_out" type="logic">
+         <obj_property name="ElementShortName">gp_reg_wb_out</obj_property>
+         <obj_property name="ObjectShortName">gp_reg_wb_out</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/FD_EM_reg/mem_we_out" type="logic">
+         <obj_property name="ElementShortName">mem_we_out</obj_property>
+         <obj_property name="ObjectShortName">mem_we_out</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/FD_EM_reg/mem_re_out" type="logic">
+         <obj_property name="ElementShortName">mem_re_out</obj_property>
+         <obj_property name="ObjectShortName">mem_re_out</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/FD_EM_reg/store_data_out" type="array">
+         <obj_property name="ElementShortName">store_data_out[9:0]</obj_property>
+         <obj_property name="ObjectShortName">store_data_out[9:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/FD_EM_reg/en" type="logic">
+         <obj_property name="ElementShortName">en</obj_property>
+         <obj_property name="ObjectShortName">en</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject fp_name="group131" type="group">
+      <obj_property name="label">EM_WB reg</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="isExpanded"></obj_property>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/EM_WB_reg/clk" type="logic">
+         <obj_property name="ElementShortName">clk</obj_property>
+         <obj_property name="ObjectShortName">clk</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/EM_WB_reg/reset" type="logic">
+         <obj_property name="ElementShortName">reset</obj_property>
+         <obj_property name="ObjectShortName">reset</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/EM_WB_reg/alu_result_in" type="array">
+         <obj_property name="ElementShortName">alu_result_in[9:0]</obj_property>
+         <obj_property name="ObjectShortName">alu_result_in[9:0]</obj_property>
+         <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/EM_WB_reg/alu_result_out" type="array">
+         <obj_property name="ElementShortName">alu_result_out[9:0]</obj_property>
+         <obj_property name="ObjectShortName">alu_result_out[9:0]</obj_property>
+         <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/EM_WB_reg/ram_rdata_in" type="array">
+         <obj_property name="ElementShortName">ram_rdata_in[9:0]</obj_property>
+         <obj_property name="ObjectShortName">ram_rdata_in[9:0]</obj_property>
+         <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/EM_WB_reg/ram_rdata_out" type="array">
+         <obj_property name="ElementShortName">ram_rdata_out[9:0]</obj_property>
+         <obj_property name="ObjectShortName">ram_rdata_out[9:0]</obj_property>
+         <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/EM_WB_reg/gp_reg_wb_in" type="logic">
+         <obj_property name="ElementShortName">gp_reg_wb_in</obj_property>
+         <obj_property name="ObjectShortName">gp_reg_wb_in</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/EM_WB_reg/gp_reg_wb_out" type="logic">
+         <obj_property name="ElementShortName">gp_reg_wb_out</obj_property>
+         <obj_property name="ObjectShortName">gp_reg_wb_out</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/EM_WB_reg/mem_re_in" type="logic">
+         <obj_property name="ElementShortName">mem_re_in</obj_property>
+         <obj_property name="ObjectShortName">mem_re_in</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/EM_WB_reg/mem_re_out" type="logic">
+         <obj_property name="ElementShortName">mem_re_out</obj_property>
+         <obj_property name="ObjectShortName">mem_re_out</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/EM_WB_reg/gp_rdata2_address_in" type="array">
+         <obj_property name="ElementShortName">gp_rdata2_address_in[2:0]</obj_property>
+         <obj_property name="ObjectShortName">gp_rdata2_address_in[2:0]</obj_property>
+         <obj_property name="Radix">BINARYRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/EM_WB_reg/gp_rdata2_address_out" type="array">
+         <obj_property name="ElementShortName">gp_rdata2_address_out[2:0]</obj_property>
+         <obj_property name="ObjectShortName">gp_rdata2_address_out[2:0]</obj_property>
+         <obj_property name="Radix">BINARYRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/EM_WB_reg/en" type="logic">
+         <obj_property name="ElementShortName">en</obj_property>
+         <obj_property name="ObjectShortName">en</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject fp_name="group145" type="group">
+      <obj_property name="label">Forwarding unit</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="isExpanded"></obj_property>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/fw_unit/exmem_wb_wr" type="logic">
+         <obj_property name="ElementShortName">exmem_wb_wr</obj_property>
+         <obj_property name="ObjectShortName">exmem_wb_wr</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/fw_unit/ex_is_load" type="logic">
+         <obj_property name="ElementShortName">ex_is_load</obj_property>
+         <obj_property name="ObjectShortName">ex_is_load</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/fw_unit/ex_dest_reg" type="array">
+         <obj_property name="ElementShortName">ex_dest_reg[2:0]</obj_property>
+         <obj_property name="ObjectShortName">ex_dest_reg[2:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/fw_unit/id_dest_reg" type="array">
+         <obj_property name="ElementShortName">id_dest_reg[2:0]</obj_property>
+         <obj_property name="ObjectShortName">id_dest_reg[2:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/fw_unit/id_src_reg" type="array">
+         <obj_property name="ElementShortName">id_src_reg[2:0]</obj_property>
+         <obj_property name="ObjectShortName">id_src_reg[2:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/fw_unit/forwardA" type="logic">
+         <obj_property name="ElementShortName">forwardA</obj_property>
+         <obj_property name="ObjectShortName">forwardA</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/fw_unit/forwardB" type="logic">
+         <obj_property name="ElementShortName">forwardB</obj_property>
+         <obj_property name="ObjectShortName">forwardB</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_pipeline_cpu10bits/dut/fw_unit/stall" type="logic">
+         <obj_property name="ElementShortName">stall</obj_property>
+         <obj_property name="ObjectShortName">stall</obj_property>
+      </wvobject>
+   </wvobject>
+</wave_config>

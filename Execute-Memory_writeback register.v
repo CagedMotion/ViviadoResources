@@ -16,7 +16,10 @@ module Exe_Mem_WB_reg(
     output wire       mem_re_out,
     //latching the gp_rdata2_address 3 bits
     input wire  [2:0] gp_rdata2_address_in,
-    output wire [2:0] gp_rdata2_address_out
+    output wire [2:0] gp_rdata2_address_out,
+    // Stall Signal
+    input wire stall_in,
+    output wire stall_out
 );
     wire en = 1'b1;
     
@@ -37,5 +40,9 @@ module Exe_Mem_WB_reg(
     register_1bit REG7(.clk(clk), .reset(reset), .en(en), .din(gp_rdata2_address_in[2]), .dout(gp_rdata2_address_out[2])),
                   REG8(.clk(clk), .reset(reset), .en(en), .din(gp_rdata2_address_in[1]), .dout(gp_rdata2_address_out[1])),
                   REG9(.clk(clk), .reset(reset), .en(en), .din(gp_rdata2_address_in[0]), .dout(gp_rdata2_address_out[0]));
+    
+    // Stall signal
+    register_1bit REG10(.clk(clk), .reset(reset),  .en(en), .din(stall_in), .dout(stall_out));
+
 
 endmodule
