@@ -23,15 +23,11 @@ module pipeline_CPU10bits(
     reg halted_reg;
     assign cpu_halted = halted_reg;
 
-    // Stall signal from hazard detection (via forwarding unit)
-    wire stall;
-
-    // Instantiate updated Fetch Unit (with stall input)
+    // Instantiate updated Fetch Unit
     fetch_unit FU_inst (
         .clk(clk),
         .reset(rst),
         .halted(halted_reg),
-        .stall(stall),           
         .branch(branch_sig),
         .jump(jump_sig),
         .branch_addr(branch_target),
@@ -177,7 +173,7 @@ module pipeline_CPU10bits(
     end
 
     //----------------------------------------------------------
-    // FD->EM Pipeline Register (updated with stall)
+    // FD->EM Pipeline Register
     //----------------------------------------------------------
     // Compute the source addresses from FD stage for hazard detection:
     wire [2:0] fd_srcA_addr = {bank_sel, rs_field};
@@ -193,7 +189,6 @@ module pipeline_CPU10bits(
     fd_EX_Mem_reg FD_EM_reg (
         .clk(clk),
         .reset(rst),
-        .stall(stall),  // NEW: propagate stall signal
         .gp_rdata1_address_in(fd_srcA_addr),
         .gp_rdata1_address_out(gp_rdata1_address_out),
         .gp_rdata2_address_in(fd_srcB_addr),
@@ -215,7 +210,7 @@ module pipeline_CPU10bits(
     );
     
     //----------------------------------------------------------
-    // Forwarding Unit (updated to generate a stall signal)
+    // Forwarding Unit
     //----------------------------------------------------------
     // Here we use em_mem_re as the indicator that the previous instruction is a load.
     wire [9:0] wb_alu_result;
@@ -227,18 +222,16 @@ module pipeline_CPU10bits(
 
     forwarding_unit fw_unit (
         .exmem_wb_wr(wb_reg_we),
-        .ex_is_load(em_mem_re),  // load indicator from EM stage
         .ex_dest_reg(wb_dest),
         .id_dest_reg(gp_rdata2_address_out),
         .id_src_reg(gp_rdata1_address_out),
         .forwardA(forwardA),
-        .forwardB(forwardB),
-        .stall(stall)
+        .forwardB(forwardB)
     );
 
     // Mux the EM stage ALU inputs to handle forwarding.
-    wire [9:0] alu_operandA = (forwardA) ? wb_alu_result : em_operandA;
-    wire [9:0] alu_operandB = (forwardB) ? wb_alu_result : em_operandB;
+    wire [9:0] alu_operandA = (forwardA) ? final_wdata : em_operandA;
+    wire [9:0] alu_operandB = (forwardB) ? final_wdata : em_operandB;
 
     //----------------------------------------------------------
     // Stage 2: Execute + Memory (EM)
@@ -282,8 +275,7 @@ module pipeline_CPU10bits(
         .mem_re_in(em_mem_re),
         .mem_re_out(wb_mem_re),
         .gp_rdata2_address_in(gp_rdata2_address_out), 
-        .gp_rdata2_address_out(wb_dest),
-        .stall(stall)
+        .gp_rdata2_address_out(wb_dest)
     );
 
     //----------------------------------------------------------
@@ -300,7 +292,7 @@ module pipeline_CPU10bits(
     // Drive register file write signals
     assign wb_wdata = final_wdata;
     assign wb_waddr = wb_dest[1:0];  // lower 2 bits
-    assign wb_we = (stall == 1'b1) ? 1'b0 : wb_reg_we;
+    assign wb_we = wb_reg_we;
 
     //----------------------------------------------------------
     // Halt Logic
@@ -365,8 +357,8 @@ module tb_pipeline_cpu10bits;
         #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
         #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
         #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-//        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-//        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
+        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
+        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
 //        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
 //        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
 //        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
