@@ -48,6 +48,7 @@ module pipeline_CPU10bits(
     wire       bank_sel = instr[2];
     wire [1:0] fimm     = instr[1:0];
     wire [6:0] jmp_addr = instr[6:0];
+    
 
     // Derive destination register as 3 bits: {bank_sel, rt_field}
     wire [2:0] dest_reg_fd = {bank_sel, rt_field};
@@ -61,7 +62,7 @@ module pipeline_CPU10bits(
         .clk(clk),
         .rst(rst),
         .we(wb_we),
-        .bank_sel(bank_sel),
+        .bank_sel(wb_dest[2]),
         .waddr(wb_waddr),   // lower 2 bits
         .wdata(wb_wdata),
         .raddr1(rs_field),
@@ -155,6 +156,7 @@ module pipeline_CPU10bits(
             // 110: LOAD.
             3'b110: begin
                 fd_alu_ctrl = 3'b000;  // Effective address = base + offset
+                alu_inB = sign_extend_imm(fimm);
                 fd_reg_we   = 1'b1;    // Write loaded data in WB stage
                 fd_mem_re   = 1'b1;    // Memory read
             end
@@ -162,6 +164,7 @@ module pipeline_CPU10bits(
             // 111: STORE.
             3'b111: begin
                 fd_alu_ctrl   = 3'b000;  // Effective address
+                alu_inB = sign_extend_imm(fimm);
                 fd_mem_we     = 1'b1;    // Memory write
                 fd_store_data = fd_rdata2;  // Data to store is from rt
             end
@@ -185,13 +188,17 @@ module pipeline_CPU10bits(
     wire       em_mem_we;
     wire       em_mem_re;
     wire [9:0] em_store_data;
-
+    wire [2:0] wb_dest;
+    wire [2:0] alt_rdata2;
+    
+    assign alt_rdata2 = (opcode == 3'b100) ? wb_dest : fd_srcB_addr;
+    
     fd_EX_Mem_reg FD_EM_reg (
         .clk(clk),
         .reset(rst),
         .gp_rdata1_address_in(fd_srcA_addr),
         .gp_rdata1_address_out(gp_rdata1_address_out),
-        .gp_rdata2_address_in(fd_srcB_addr),
+        .gp_rdata2_address_in(alt_rdata2),
         .gp_rdata2_address_out(gp_rdata2_address_out),
         .aluA_in(alu_inA),
         .aluA_out(em_operandA),
@@ -217,7 +224,6 @@ module pipeline_CPU10bits(
     wire [9:0] wb_mem_rdata;
     wire       wb_reg_we;
     wire       wb_mem_re;
-    wire [2:0] wb_dest;
     wire       forwardA, forwardB;
 
     forwarding_unit fw_unit (
