@@ -156,7 +156,7 @@ module pipeline_CPU10bits(
             // 110: LOAD.
             3'b110: begin
                 fd_alu_ctrl = 3'b000;  // Effective address = base + offset
-                alu_inB = sign_extend_imm(fimm);
+                alu_inB = zero_extend_imm(fimm);
                 fd_reg_we   = 1'b1;    // Write loaded data in WB stage
                 fd_mem_re   = 1'b1;    // Memory read
             end
@@ -164,7 +164,7 @@ module pipeline_CPU10bits(
             // 111: STORE.
             3'b111: begin
                 fd_alu_ctrl   = 3'b000;  // Effective address
-                alu_inB = sign_extend_imm(fimm);
+                alu_inB = zero_extend_imm(fimm);
                 fd_mem_we     = 1'b1;    // Memory write
                 fd_store_data = fd_rdata2;  // Data to store is from rt
             end
@@ -234,7 +234,8 @@ module pipeline_CPU10bits(
         .forwardA(forwardA),
         .forwardB(forwardB)
     );
-
+    
+    reg [9:0] final_wdata;
     // Mux the EM stage ALU inputs to handle forwarding.
     wire [9:0] alu_operandA = (forwardA) ? final_wdata : em_operandA;
     wire [9:0] alu_operandB = (forwardB) ? final_wdata : em_operandB;
@@ -287,7 +288,7 @@ module pipeline_CPU10bits(
     //----------------------------------------------------------
     // Stage 3: Writeback (WB)
     //----------------------------------------------------------
-    reg [9:0] final_wdata;
+ 
     always @(wb_mem_re, wb_mem_rdata, wb_alu_result) begin
         if (wb_mem_re)
             final_wdata <= wb_mem_rdata;   // load

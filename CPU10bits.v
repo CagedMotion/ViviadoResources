@@ -18,7 +18,6 @@ module CPU10bits(
     // Halt signal for the fetch unit
     reg halted_reg;
     reg next_halt;
-    wire stall = 1'b0;
     assign cpu_halted = halted_reg;
 
     //-------------------------------------------------------------------------
@@ -32,7 +31,6 @@ module CPU10bits(
         .reset(rst),
         .halted(halted_reg),
         .branch(branch_sig),
-        .stall(stall),
         .jump(jump_sig),
         .branch_addr(branch_target),
         .jump_target(jump_target),
@@ -46,21 +44,18 @@ module CPU10bits(
     wire [9:0] instr;
 //    task1rom ROM_inst (
 //        .address(pc),
-//        .clk(clk),           // clk not strictly required if ROM is asynchronous
 //        .read_data(instr)
 //    );
 
-    task2rom ROM_inst (
+//    task2rom ROM_inst (
+//        .address(pc),       
+//        .read_data(instr)
+//    );
+
+    task3rom ROM_inst (
         .address(pc),
-        .clk(clk),           // clk not strictly required if ROM is asynchronous
         .read_data(instr)
     );
-
-//    task3rom ROM_inst (
-//        .address(pc),
-//        .clk(clk),           // clk not strictly required if ROM is asynchronous
-//        .read_data(instr)
-//    );
 
     //-------------------------------------------------------------------------
     // 4) Data Memory (Asynchronous Read, Synchronous Write)
@@ -76,20 +71,20 @@ module CPU10bits(
 //        .wdata(ram_wdata),
 //        .rdata(ram_rdata)
 //    );
-    ramtask2 RAM_inst (
-        .clk(clk),
-        .we(ram_we),
-        .address(ram_addr),
-        .wdata(ram_wdata),
-        .rdata(ram_rdata)
-    );
-//    ramtask3 RAM_inst (
+//    ramtask2 RAM_inst (
 //        .clk(clk),
 //        .we(ram_we),
 //        .address(ram_addr),
 //        .wdata(ram_wdata),
 //        .rdata(ram_rdata)
 //    );
+    ramtask3 RAM_inst (
+        .clk(clk),
+        .we(ram_we),
+        .address(ram_addr),
+        .wdata(ram_wdata),
+        .rdata(ram_rdata)
+    );
     //-------------------------------------------------------------------------
     // 6) Instruction Decode
     //    According to the ISA:
@@ -226,14 +221,15 @@ module CPU10bits(
 
             // 100: JUMP.
             3'b100: begin
+                gp_reg_bank_sel = 1'b0;
                 jump_sig    = 1'b1;
                 jump_target = sign_extend_jmp(jmp_addr);
             end
 
             // 101: BEQ: Branch if equal.
             3'b101: begin
-                alu_inA <= gp_rdata1;
-                alu_inB <= gp_rdata2;
+//                alu_inA <= gp_rdata1;
+//                alu_inB <= gp_rdata2;
                 if (alu_inA == alu_inB) begin
                     branch_sig    = 1'b1;
                     branch_target = pc + zero_extend_imm(fimm);
@@ -327,19 +323,19 @@ module tb_cpu10bits;
         #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
         #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
         #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;//#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-//        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-//        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-//        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-//        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-//        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-//        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-//        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-//        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-//        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-//        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-//        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-//        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
+        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
+        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
+        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
+        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
+        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
+        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
+        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
+        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
+        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
+        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
+        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
+        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
+        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
 //        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
 //        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
 //        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
