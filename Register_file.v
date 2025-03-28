@@ -59,7 +59,7 @@ module register_file(
     end
     
     // Combinational read blocks.
-    always @(read_selector0) begin
+    always @(read_selector0,r1,r2,r3,r4,r5,r6,r7,r8) begin
         case(read_selector0)
             3'b000: rdata1 = r1;
             3'b001: rdata1 = r2;
@@ -73,7 +73,7 @@ module register_file(
         endcase
     end
 
-    always @(read_selector1) begin
+    always @(read_selector1,r1,r2,r3,r4,r5,r6,r7,r8) begin
         case(read_selector1)
             3'b000: rdata2 = r1;
             3'b001: rdata2 = r2;
@@ -95,6 +95,9 @@ endmodule
 
 module tb_register_file;
 
+  // Clock period parameter
+  parameter PERIOD = 10;
+
   // Testbench signals
   reg         clk;
   reg         rst;
@@ -106,9 +109,9 @@ module tb_register_file;
   reg  [1:0]  raddr2;
   wire [9:0]  rdata1;
   wire [9:0]  rdata2;
-  
-  // Instantiate the register_file module
-  register_file uut(
+
+  // Instantiate the register_file module (DUT)
+  register_file dut(
     .clk(clk),
     .rst(rst),
     .we(we),
@@ -120,117 +123,96 @@ module tb_register_file;
     .rdata1(rdata1),
     .rdata2(rdata2)
   );
-  
-    parameter PERIOD = 10;
-    initial clk = 1'b0;
-    always #(PERIOD/2) clk = ~clk;
-    
-  // Test sequence
+
+  // Clock generation
+  initial clk = 1'b0;
+  always #(PERIOD/2) clk = ~clk;
+
+  // Stimulus sequence
   initial begin
     // --- Initialization ---
-    rst      = 1;          // start with reset asserted
+    rst      = 1;          // Assert reset initially
     we       = 0;          
     bank_sel = 0;
     waddr    = 2'b00;
     wdata    = 10'b0;
     raddr1   = 2'b00;
-    raddr2   = 2'b00;    
-    #PERIOD
-    // --- Write to Bank 0 ---
-    // Write to register 0 (bank0, addr 0)
-    
-    rst = 0;              // Deassert reset
+    raddr2   = 2'b00;
+    #(PERIOD);
+
+    // Release reset
+    rst = 0;
+    #(PERIOD);
+
+    // --- Test Bank 0: Write and Read Operations ---
     bank_sel = 0;
     we       = 1;
-    waddr    = 2'b00;
-    wdata    = 10'd15;     // example value
-    #PERIOD
+    // Write to register 0 (addr 0) with a sample value
+    waddr    = 2'b00; wdata = 10'd15;
+    #(PERIOD);
 
-    // Write to register 1 (bank0, addr 1)
-    //@(posedge clk);
-        bank_sel = 0;
-        we       = 1;
-        waddr    = 2'b01;
-        wdata    = 10'd23;
-        #PERIOD
+    // Write to register 1 (addr 1)
+    waddr    = 2'b01; wdata = 10'd23;
+    #(PERIOD);
 
-    // Write to register 2 (bank0, addr 2)
-    //@(posedge clk);
-    bank_sel = 0;
-    we       = 1;
-    waddr    = 2'b10;
-    wdata    = 10'd37;
-    #PERIOD
+    // Write to register 2 (addr 2)
+    waddr    = 2'b10; wdata = 10'd37;
+    #(PERIOD);
 
-   // Write to register 3 (bank0, addr 3)
-   bank_sel = 0;
-   we       = 1;
-   waddr    = 2'b11;
-   wdata    = 10'd42;
-        #PERIOD
-        #PERIOD
-//    // Disable writing so that read operations can occur
-//    // --- Read from Bank 0 ---
-//    // Read registers 0 and 1 using port1 and port2 respectively.
- 
+    // Write to register 3 (addr 3)
+    waddr    = 2'b11; wdata = 10'd42;
+    #(PERIOD);
+
+    // Disable writing to allow read operations
     we = 0;
-    bank_sel = 0;
-    raddr1   = 2'b00;    // should read register 0 (value 15)
-    raddr2   = 2'b01;    // should read register 1 (value 23)
-    #PERIOD      // wait for synchronous read
-    $display("Time %t: Bank0 -> rdata1 (reg0) = %d, rdata2 (reg1) = %d", $time, rdata1, rdata2);
-    #PERIOD
-    
-      // Read registers 2 and 3.
-       raddr1   = 2'b10;   // should read register 2 (value 37)
-       raddr2   = 2'b11;    // should read register 3 (value 42)
-       #PERIOD
-       $display("Time %t: Bank0 -> rdata1 (reg2) = %d, rdata2 (reg3) = %d", $time, rdata1, rdata2);
-       #PERIOD
-       
-    // --- Write to Bank 1 ---
-    // Write to register 0 in bank1
+
+    // Read from registers 0 and 1
+    raddr1   = 2'b00;
+    raddr2   = 2'b01;
+    #(PERIOD);
+    $display("Time %t: Bank0 - rdata1(reg0) = %d, rdata2(reg1) = %d", $time, rdata1, rdata2);
+
+    // Read from registers 2 and 3
+    raddr1   = 2'b10;
+    raddr2   = 2'b11;
+    #(PERIOD);
+    $display("Time %t: Bank0 - rdata1(reg2) = %d, rdata2(reg3) = %d", $time, rdata1, rdata2);
+    #(PERIOD);
+
+    // --- Test Bank 1: Write and Read Operations ---
     bank_sel = 1;
     we       = 1;
-    waddr    = 2'b00;
-    wdata    = 10'd7;
-    #PERIOD
-    
-    // Write to register 1 in bank 1
-    bank_sel = 1;
-    we       = 1;
-    waddr    = 2'b01;
-    wdata    = 10'd14;
-    #PERIOD
-    // Write to register 2 in bank1
-    bank_sel = 1;
-    we       = 1;
-    waddr    = 2'b10;
-    wdata    = 10'd28;
-    #PERIOD
-    // Write to register 3 in bank1
-    bank_sel = 1;
-    we       = 1;
-    waddr    = 2'b11;
-    wdata    = 10'd35;
-    #PERIOD 
-    #PERIOD
-  
-    // --- Read from Bank 1 ---
-    // Read registers 0 and 1 
+    // Write to register 0 in Bank1
+    waddr    = 2'b00; wdata = 10'd7;
+    #(PERIOD);
+
+    // Write to register 1 in Bank1
+    waddr    = 2'b01; wdata = 10'd14;
+    #(PERIOD);
+
+    // Write to register 2 in Bank1
+    waddr    = 2'b10; wdata = 10'd28;
+    #(PERIOD);
+
+    // Write to register 3 in Bank1
+    waddr    = 2'b11; wdata = 10'd35;
+    #(PERIOD);
+
+    // Disable write and perform read operations on Bank1
     we = 0;
-    bank_sel = 1;
-    raddr1   = 2'b00;    // should read register 0 (value 7)
-    raddr2   = 2'b01;    // should read register 1 (value 14)
-    #PERIOD
-    $display("Time %t: Bank1 -> rdata1 (reg0) = %d, rdata2 (reg1) = %d", $time, rdata1, rdata2);
-    #PERIOD
-    // Read registers 2 and 3 
-    raddr1   = 2'b10;    // should read register 2 (value 28)
-    raddr2   = 2'b11;    // should read register 3 (value 35)
-    #PERIOD
-    $display("Time %t: Bank1 -> rdata1 (reg2) = %d, rdata2 (reg3) = %d", $time, rdata1, rdata2);
-    #PERIOD
+
+    // Read registers 0 and 1 from Bank1
+    raddr1   = 2'b00;
+    raddr2   = 2'b01;
+    #(PERIOD);
+    $display("Time %t: Bank1 - rdata1(reg0) = %d, rdata2(reg1) = %d", $time, rdata1, rdata2);
+
+    // Read registers 2 and 3 from Bank1
+    raddr1   = 2'b10;
+    raddr2   = 2'b11;
+    #(PERIOD);
+    $display("Time %t: Bank1 - rdata1(reg2) = %d, rdata2(reg3) = %d", $time, rdata1, rdata2);
+    #(PERIOD);
 
     $finish;
   end

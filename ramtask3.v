@@ -12,9 +12,9 @@ module ramtask3(
     reg [9:0] ram[1023:0];
     
     initial begin
-        ram[0] = 10'b0000000110; // ram location 576 is the start of the nul 
+        ram[0] = 10'b0000000101; // ram location 5 is the start of the nul 
         ram[1] = 10'b0000110010;
-        ram[3] = 10'b0000010010; 
+        ram[3] = 10'b0000010100; 
         //ram[2] = 10'b1000010000;//ARRAY 1 ADDRESS
         ram[5] = 10'b0000000000;
         ram[6] = 10'b0001010111;
