@@ -63,7 +63,8 @@ module pipeline_CPU10bits(
 
     // Derive destination register as 3 bits: {bank_sel, rt_field}
     wire [2:0] dest_reg_fd = {bank_sel, rt_field};
-
+    reg        fd_bank_sel;
+    
     // Register File
     wire [9:0] fd_rdata1, fd_rdata2;
     wire [9:0] wb_wdata;
@@ -88,7 +89,6 @@ module pipeline_CPU10bits(
     reg        fd_reg_we;
     reg        fd_mem_we;
     reg        fd_mem_re;
-    reg        fd_bank_sel;
     reg  [9:0] fd_store_data; // Data to be stored for STORE instructions
 
     // FD Stage Decoding (same as before)
