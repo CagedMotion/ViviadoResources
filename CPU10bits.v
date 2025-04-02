@@ -64,13 +64,13 @@ module CPU10bits(
     reg  [9:0] ram_wdata;
     reg        ram_we;
     wire [9:0] ram_rdata;
-//    ramtask1 RAM_inst (
-//        .clk(clk),
-//        .we(ram_we),
-//        .address(ram_addr),
-//        .wdata(ram_wdata),
-//        .rdata(ram_rdata)
-//    );
+    ramtask1 RAM_inst (
+        .clk(clk),
+        .we(ram_we),
+        .address(ram_addr),
+        .wdata(ram_wdata),
+        .rdata(ram_rdata)
+    );
 //    ramtask2 RAM_inst (
 //        .clk(clk),
 //        .we(ram_we),
@@ -78,13 +78,13 @@ module CPU10bits(
 //        .wdata(ram_wdata),
 //        .rdata(ram_rdata)
 //    );
-    ramtask3 RAM_inst (
-        .clk(clk),
-        .we(ram_we),
-        .address(ram_addr),
-        .wdata(ram_wdata),
-        .rdata(ram_rdata)
-    );
+//    ramtask3 RAM_inst (
+//        .clk(clk),
+//        .we(ram_we),
+//        .address(ram_addr),
+//        .wdata(ram_wdata),
+//        .rdata(ram_rdata)
+//    );
     //-------------------------------------------------------------------------
     // 6) Instruction Decode
     //    According to the ISA:

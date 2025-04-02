@@ -1,9 +1,14 @@
 `timescale 1ns/1ps
 
-module pipeline_CPU10bits(
+module pipeline_branch_predictor_CPU10bits(
     input  wire clk,
     input  wire rst,
+    input  wire branch_update_flag_input,
+    input  wire actual_branch_outcome_input,
+    input  wire [9:0] branch_pc_input,
     output wire cpu_halted  // Indicates that the CPU has halted.
+    
+    
 );
 
     //----------------------------------------------------------
@@ -23,12 +28,41 @@ module pipeline_CPU10bits(
     reg halted_reg;
     assign cpu_halted = halted_reg;
 
+    wire branch_prediction;
+    wire branch_update_flag;
+    wire actual_branch_outcome;
+    wire [9:0] branch_pc;
+    
+    assign branch_update_flag = branch_update_flag_input;
+    assign actual_branch_outcome = actual_branch_outcome_input;
+    assign branch_pc = branch_pc_input;
+    
+//    branch_predictor_2bit #(.NUM_ENTRIES(16)) bp_inst (
+//        .clk(clk),
+//        .reset(rst),
+//        .pc(pc),               // Current PC from fetch unit
+//        .prediction(branch_prediction),
+//        .update(branch_update_flag),
+//        .actual_taken(actual_branch_outcome),
+//        .update_pc(branch_pc)
+//    );
+    
+    branch_predictor_1bit #(.NUM_ENTRIES(64)) bp_inst (
+        .clk(clk),
+        .reset(rst),
+        .pc(pc),               // Current PC from fetch unit
+        .prediction(branch_prediction),
+        .update(branch_update_flag),
+        .actual_taken(actual_branch_outcome),
+        .update_pc(branch_pc)
+    );    
+   
     // Instantiate updated Fetch Unit
     fetch_unit FU_inst (
         .clk(clk),
         .reset(rst),
         .halted(halted_reg),
-        .branch(branch_sig),
+        .branch(branch_prediction),
         .jump(jump_sig),
         .branch_addr(branch_target),
         .jump_target(jump_target),
@@ -36,10 +70,10 @@ module pipeline_CPU10bits(
     );
 
      //Instruction Memory (ROM)
-    task1rom ROM_inst (
-        .address(pc),
-        .read_data(instr)
-    );
+//    task1rom ROM_inst (
+//        .address(pc),
+//        .read_data(instr)
+//    );
 
 //     Instruction Memory (ROM)
 //    task2rom ROM_inst (
@@ -186,6 +220,35 @@ module pipeline_CPU10bits(
         endcase
     end
 
+    reg branch_update_flag_reg;
+    reg actual_branch_outcome_reg;
+    reg [9:0] branch_pc_reg;
+    
+    always @(rst, opcode) begin
+        if (rst) begin
+            branch_update_flag_reg <= 1'b0;
+            actual_branch_outcome_reg <= 1'b0;
+            branch_pc_reg  <= 10'd0;
+        end else begin
+            if ((opcode == 3'b010) || (opcode == 3'b101)) begin
+                branch_update_flag_reg <= 1'b1;
+                actual_branch_outcome_reg <= branch_sig;
+                branch_pc_reg  <= pc;
+            end else begin
+                branch_update_flag_reg <= 1'b0;
+                actual_branch_outcome_reg <= 1'b0;
+                branch_pc_reg <= pc;
+            end
+         end
+         
+    end
+    
+    assign branch_update_flag = branch_update_flag_reg;
+    assign actual_branch_outcome = actual_branch_outcome_reg;
+    assign branch_pc = branch_pc_reg;
+    
+
+
     //----------------------------------------------------------
     // FD->EM Pipeline Register
     //----------------------------------------------------------
@@ -270,13 +333,13 @@ module pipeline_CPU10bits(
     wire [9:0] mem_addr  = alu_result;
     wire [9:0] mem_wdata = (em_mem_we) ? em_store_data : 10'd0;
 
-    ramtask1 RAM_inst (
-        .clk(clk),
-        .we(em_mem_we),
-        .address(mem_addr),
-        .wdata(mem_wdata),
-        .rdata(mem_rdata)
-    );
+//    ramtask1 RAM_inst (
+//        .clk(clk),
+//        .we(em_mem_we),
+//        .address(mem_addr),
+//        .wdata(mem_wdata),
+//        .rdata(mem_rdata)
+//    );
 
 //    ramtask2 RAM_inst (
 //        .clk(clk),
@@ -364,51 +427,68 @@ module pipeline_CPU10bits(
 
 endmodule
 
-module tb_pipeline_cpu10bits;
+module tb_pipeline_branch_predictor_cpu10bits;
     reg clk;
     reg rst;
     //wire halted;
     
+    reg branch_update_flag_tb;
+    reg actual_branch_outcome_tb;
+    reg [9:0] branch_pc_tb;
+    
     // Instantiate the CPU10bits top module.
-    pipeline_CPU10bits dut (
+    pipeline_branch_predictor_CPU10bits dut (
         .clk(clk),
         .rst(rst),
+        .branch_update_flag_input(branch_update_flag_tb),
+        .actual_branch_outcome_input(actual_branch_outcome_tb),
+        .branch_pc_input(branch_pc_tb),
         .cpu_halted()  // Connect to a monitor if desired.
     );
     
     parameter PERIOD = 10;
     initial clk = 1'b1;
     always #(PERIOD/2) clk = ~clk;
-    
+   
+    integer infile;
     initial begin
-        //halted = 1;
+    
+        // Initialize signals.
         rst = 1;
+        branch_update_flag_tb = 0;
+        actual_branch_outcome_tb = 0;
+        branch_pc_tb = 10'd0;
+        
+        // Apply reset.
         #PERIOD;
         rst = 0;
-        //halted = 0;
+        #PERIOD;
         
-        // Optionally, drive any test stimulus here.
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-//        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-//        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
+        // $fopen opens a file for reading
+        infile=$fopen("E:/College/Western Michigan University/ECE_Labs/ViviadoResources/out2.txt","r");
+        //read the file
+        if (infile == 0) begin
+            $display("Error: Could not open trace file 'out2.txt'.");
+            $finish;
+        end
         
-        $finish;
+        while (! $feof(infile)) begin //while "end of file" is not reached
+            $fscanf(infile,"%d\n",branch_pc_tb ); // read line as hexadecimal value
+            $fscanf(infile,"%d\n",actual_branch_outcome_tb ); // read line as hexadecimal value
+            
+            // Pulse the update flag for one clock cycle.
+            branch_update_flag_tb = 1;
+            @(posedge clk);
+            branch_update_flag_tb = 0;
+            
+            // Wait one clock cycle before processing the next trace entry.
+            @(posedge clk);
+        end
+    // close the file.
+    $fclose(infile);
+    $display("Finished processing branch trace.");
+    #PERIOD;
+    $finish;
     end
+    
 endmodule
