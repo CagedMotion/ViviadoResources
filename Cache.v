@@ -89,11 +89,11 @@ module Cache(
             end
 
             writeback_alloc: begin
-                if (dirty && mem_phase == 2'b00) begin
+                if (dirty[i] && mem_phase == 2'b00) begin
                     start_writeback = 1'b1;
-                end else if ((!dirty && mem_phase == 2'b00) || (dirty && mem_phase == 2'b01)) begin
+                end else if ((!dirty[i] && mem_phase == 2'b00) || (dirty[i] && mem_phase == 2'b01)) begin
                     start_alloc = 1'b1;
-                end else if ((dirty && mem_phase == 2'b10) || (!dirty && mem_phase == 2'b01)) begin
+                end else if ((dirty[i] && mem_phase == 2'b10) || (!dirty[i] && mem_phase == 2'b01)) begin
                     update_cache = 1'b1;
                     if (is_write)
                         set_dirty = 1'b1;
