@@ -178,10 +178,11 @@ module Cache(
 endmodule
 
 
-module tb_Cache();
+module tb_Cache;
+    // Signal declarations.
     reg clk;
     reg rst;
-    reg CPU_RW;
+    reg CPU_RW;           // 0: read, 1: write.
     reg [19:0] cpu_data_in;
     reg [9:0] cpu_address;
     wire [19:0] cpu_data_out;
@@ -197,25 +198,25 @@ module tb_Cache();
     wire [9:0] ram_rdata;
     reg mem_ready;
 
-    // Updated Cache module instantiation example:
+    // Instantiate the Cache module.
     Cache cache_inst (
         .clk(clk),
         .rst(rst),
         .CPU_RW(CPU_RW),
         .cpu_data_in(cpu_data_in),
         .cpu_address(cpu_address),
-        .mem_data_from_ram(ram_rdata),    // Now this is the incoming data from RAM.
+        .mem_data_from_ram(ram_rdata), // Data coming from RAM.
         .mem_ready(mem_ready),
         .cpu_data_out(cpu_data_out),
         .cache_ready(cache_ready),
         .mem_addr(mem_addr),
-        .mem_data_to_ram(mem_data_out_to_ram), // This now drives RAM for write-back.
+        .mem_data_to_ram(mem_data_out_to_ram), // Data written back to RAM.
         .mem_rw(mem_rw),
         .mem_req(mem_req)
     );
 
-    
-    // When mem_rw = 1, we assert we; when mem_rw = 0, we deassert.
+    // Instantiate the RAM module.
+    // When mem_rw = 1, the write enable is asserted.
     wire ram_we = mem_rw;
     ramtask2 ram_inst (
         .rdata(ram_rdata),
@@ -224,39 +225,56 @@ module tb_Cache();
         .address(mem_addr),
         .wdata(mem_data_out_to_ram)
     );
-    
-    // Clock generation.
+
+    // Clock generation: 10 ns period.
     parameter PERIOD = 10;
-    initial clk = 1'b1;
-    always #(PERIOD/2) clk = ~clk; // 10 ns period.
-    
     initial begin
+        clk = 1;
+        forever #(PERIOD/2) clk = ~clk;
+    end
+
+    // Test sequence.
+    initial begin
+        // Initialize signals.
         rst = 1;
-        CPU_RW = 0;
+        CPU_RW = 0;       // Default to read.
         cpu_data_in = 20'd0;
         cpu_address = 10'd0;
-        mem_ready = 1; // For simplicity, assume memory is always ready.
-        #PERIOD;
-        #PERIOD;
+        mem_ready = 1;    // Assume memory is always ready.
+        # (2 * PERIOD);
         rst = 0;
-        
-        // Issue a read request (expected to miss and cause an allocation).
-        // Example address: tag = 5'b00101, index = 4'b0010, offset = 0.
-        cpu_address = 10'b00101_0010; 
         #PERIOD;
-        #PERIOD;
-        
-        // Issue a write request.
-        CPU_RW = 1;
-        cpu_data_in = 20'd1234;
-        // Example address: tag = 5'b00101, index = 4'b0011, offset = 1.
-        cpu_address = 10'b00101_0011; 
-        #PERIOD;
+
+        // -------------------------------
+        // Test 1: Read Miss then Read Hit
+        // -------------------------------
+        cpu_address = 10'd50; // Issue read at address 50.
+        CPU_RW = 0;          // Read mode.
         #PERIOD;
         
-        // End simulation.
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
+        // Allow time for the cache to complete the fetch.
+        # (2 * PERIOD);
+
+        cpu_address = 10'd50; // Issue second read to the same address.
+        CPU_RW = 0;          // Read mode.
+        #PERIOD;
+
+        // -------------------------------
+        // Test 2: Write then Read Back
+        // -------------------------------
+        // Write a new value (e.g., 123) to address 50.
+        cpu_address = 10'd50;
+        CPU_RW = 1;          // Write mode.
+        cpu_data_in = 20'd123;
+        #PERIOD;
+
+        // Now read back from address 50 expecting the new value.
+        cpu_address = 10'd50;
+        CPU_RW = 0;          // Read mode.
+        #PERIOD;
+
+        # (5 * PERIOD);
         $finish;
     end
 endmodule
+

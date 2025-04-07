@@ -20,6 +20,13 @@ module ramtask2(
 //        ram[10] = 10'b1111111011; // value -5
 //        ram[11] = 10'b1111111101; // value -3
         ram[12] = 10'b0000000000; 
+        
+        ram[50] = 10'b1010001000;
+        ram[51] = 10'b1000001011;
+        ram[52] = 10'b0001111001;
+        ram[53] = 10'b0001101001;
+        ram[54] = 10'b0101010110;
+        ram[55] = 10'b0110110011;
      end
 
     // Asynchronous read: rdata immediately reflects the memory content at "address"
