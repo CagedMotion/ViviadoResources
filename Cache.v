@@ -137,43 +137,43 @@ module Cache(
 
     // Sequential Logic: Capturing Memory Data and Cache Updates
     always @(posedge clk or posedge rst) begin
-        if (rst) begin
-            new_block <= 20'd0;
-        end else begin
-            // Capture incoming memory data during ALLOCATION.
-            if (state == ALLOCATION && mem_ready) begin
-                if (mem_phase == 0)
-                    new_block[9:0]  <= mem_data_to_ram[9:0];   // Capture lower word.
-                else if (mem_phase == 1)
-                    new_block[19:10] <= mem_data_to_ram[9:0];   // Capture upper word.
-            end
+    if (rst) begin
+        new_block <= 20'd0;
+    end else begin
+        // Capture incoming memory data during ALLOCATION.
+        if (state == ALLOCATION && mem_ready) begin
+            if (mem_phase == 0)
+                new_block[9:0]  <= mem_data_from_ram[9:0];   // Capture lower word.
+            else if (mem_phase == 1)
+                new_block[19:10] <= mem_data_from_ram[9:0];   // Capture upper word.
+        end
 
-            // Update cache for write hits.
-            if (state == IDLE_COMPARE && cpu_address != 10'b0 && hit && CPU_RW) begin
+        // Update cache for write hits.
+        if (state == IDLE_COMPARE && cpu_address != 10'b0 && hit && CPU_RW) begin
+            if (cpu_offset)
+                cache_data[cpu_index][19:10] <= cpu_data_in;
+            else
+                cache_data[cpu_index][9:0]  <= cpu_data_in;
+            dirty[cpu_index] <= 1'b1;
+        end
+
+        // After allocation completes (i.e., both words captured), update the cache line.
+        if (state == ALLOCATION && mem_ready && (mem_phase == 1)) begin
+            cache_data[cpu_index] <= new_block;
+            cache_tag[cpu_index]  <= cpu_tag;
+            valid[cpu_index]      <= 1'b1;
+            if (CPU_RW) begin
                 if (cpu_offset)
                     cache_data[cpu_index][19:10] <= cpu_data_in;
                 else
                     cache_data[cpu_index][9:0]  <= cpu_data_in;
                 dirty[cpu_index] <= 1'b1;
-            end
-
-            // After allocation completes (i.e. both words captured), update the cache line.
-            if (state == ALLOCATION && mem_ready && (mem_phase == 1)) begin
-                cache_data[cpu_index] <= new_block;
-                cache_tag[cpu_index]  <= cpu_tag;
-                valid[cpu_index]      <= 1'b1;
-                if (CPU_RW) begin
-                    if (cpu_offset)
-                        cache_data[cpu_index][19:10] <= cpu_data_in;
-                    else
-                        cache_data[cpu_index][9:0]  <= cpu_data_in;
-                    dirty[cpu_index] <= 1'b1;
-                end else begin
-                    dirty[cpu_index] <= 1'b0;
-                end
+            end else begin
+                dirty[cpu_index] <= 1'b0;
             end
         end
     end
+end
 
 endmodule
 
