@@ -28,7 +28,7 @@ module Cache(
     
     reg [1:0] state;
     reg [1:0] next_state;
-     reg [1:0] mem_phase;
+     reg mem_phase;
      
     // start of the state machine for the cache to go from idle to compare to write back and allocation.  
     parameter IDLE_COMPARE      = 2'b00;
@@ -37,9 +37,6 @@ module Cache(
     
     
     wire hit = valid[cpu_index] && (cache_tag[cpu_index] == cpu_tag);
-    
-    // Temporary register to capture data fetched from memory.
-    reg [19:0] new_block;
         
     // setting all the blocks in the cache to be 0 initially.
     integer i;
@@ -56,7 +53,7 @@ module Cache(
   
     
     // Combinational Logic: Next State and Output Signals
-    always @(state, hit, mem_phase, CPU_RW, mem_ready) begin
+    always @(state, hit, mem_phase, CPU_RW, mem_ready, cpu_address) begin
         // Default assignments.
         next_state    = state;
         cache_ready   = 0;
@@ -95,7 +92,7 @@ module Cache(
                 // Write-back phase: write one word per phase.
                 mem_req = 1'b1;
                 mem_rw  = 1'b1;  // Write operation.
-                mem_addr = {cache_tag[cpu_index], cpu_index, mem_phase[0]};
+                mem_addr = {cache_tag[cpu_index], cpu_index, mem_phase};
                 if (mem_phase == 0)
                     mem_data_to_ram = {10'b0, cache_data[cpu_index][9:0]};
                 else
@@ -109,7 +106,7 @@ module Cache(
                 // Allocation phase: read one word per phase.
                 mem_req = 1'b1;
                 mem_rw  = 1'b0;  // Read operation.
-                mem_addr = {cpu_tag, cpu_index, mem_phase[0]};
+                mem_addr = {cpu_tag, cpu_index, mem_phase};
                 // When both words have been read, update cache line and return to idle.
                 if (mem_ready && (mem_phase == 1)) begin
                     next_state  = IDLE_COMPARE;
@@ -129,23 +126,20 @@ module Cache(
         end else begin
             state <= next_state;
             if ((state == WRITEBACK || state == ALLOCATION) && mem_ready)
-                mem_phase <= mem_phase + 1;
+                mem_phase <= 1;
             else if (state == IDLE_COMPARE)
                 mem_phase <= 0;
         end
     end
 
     // Sequential Logic: Capturing Memory Data and Cache Updates
-    always @(posedge clk or posedge rst) begin
-    if (rst) begin
-        new_block <= 20'd0;
-    end else begin
+    always @(posedge clk) begin
         // Capture incoming memory data during ALLOCATION.
         if (state == ALLOCATION && mem_ready) begin
             if (mem_phase == 0)
-                new_block[9:0]  <= mem_data_from_ram[9:0];   // Capture lower word.
+                cache_data[cpu_index]  <= mem_data_from_ram[19:0];   // Capture lower word.
             else if (mem_phase == 1)
-                new_block[19:10] <= mem_data_from_ram[9:0];   // Capture upper word.
+                cache_data[cpu_index] <= mem_data_from_ram[19:0];   // Capture upper word.
         end
 
         // Update cache for write hits.
@@ -159,7 +153,6 @@ module Cache(
 
         // After allocation completes (i.e., both words captured), update the cache line.
         if (state == ALLOCATION && mem_ready && (mem_phase == 1)) begin
-            cache_data[cpu_index] <= new_block;
             cache_tag[cpu_index]  <= cpu_tag;
             valid[cpu_index]      <= 1'b1;
             if (CPU_RW) begin
@@ -173,7 +166,6 @@ module Cache(
             end
         end
     end
-end
 
 endmodule
 
@@ -195,7 +187,7 @@ module tb_Cache;
     wire mem_req;
     
     // Connection between RAM and Cache for read data.
-    wire [9:0] ram_rdata;
+    wire [19:0] ram_rdata;
     reg mem_ready;
 
     // Instantiate the Cache module.
@@ -263,13 +255,13 @@ module tb_Cache;
         // Test 2: Write then Read Back
         // -------------------------------
         // Write a new value (e.g., 123) to address 50.
-        cpu_address = 10'd50;
+        cpu_address = 10'd55;
         CPU_RW = 1;          // Write mode.
         cpu_data_in = 20'd123;
         #PERIOD;
 
         // Now read back from address 50 expecting the new value.
-        cpu_address = 10'd50;
+        cpu_address = 10'd55;
         CPU_RW = 0;          // Read mode.
         #PERIOD;
 
