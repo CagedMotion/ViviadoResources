@@ -36,9 +36,9 @@ module Cache(
     reg [19:0] cache_data [0:15];
     
     // Address breakdown for the current CPU access (not necessarily the miss)
-    wire [3:0] cpu_index = cpu_address[4:1];
-    wire [4:0] cpu_tag   = cpu_address[9:5];
-    wire       cpu_offset = cpu_address[0];    
+//    wire [3:0] cpu_index = cpu_address[4:1];
+//    wire [4:0] cpu_tag   = cpu_address[9:5];
+//    wire       cpu_offset = cpu_address[0];    
     
     // State machine definitions.
     reg [1:0] state, next_state;
@@ -51,7 +51,8 @@ module Cache(
     
     // Determine a hit based on the current access.
     // (Note: In a miss, we will latch the values so that later allocation is done correctly.)
-    wire hit = valid[cpu_index] && (cache_tag[cpu_index] == cpu_tag);
+    reg hit;
+//    valid[cpu_index] && (cache_tag[cpu_index] == cpu_tag);
         
     // Initializations.
     integer i;
@@ -70,22 +71,23 @@ module Cache(
   
 
     // Combinational block: Next state and output signals.
-    always @(IDLE_COMPARE, WRITEBACK, ALLOCATION, state, cpu_address, hit, mem_phase) begin
+    always @(IDLE_COMPARE, WRITEBACK, ALLOCATION, state, cpu_address, hit, mem_phase, rst,
+            latched_cpu_rw, latched_offset, latched_index, latched_tag, mem_ready) begin
         // Default assignments.
-        next_state    = state;
-        cache_ready   = 1'b0;
+        next_state    = IDLE_COMPARE;
+        cache_ready   = 1'b1;
         mem_req       = 0;
         mem_rw        = 0;
         mem_addr      = 10'b0;
         mem_data_to_ram = 10'b0;
         cpu_data_out  = 10'b0;
+        hit = 1'b0;
         
         case (state)
             IDLE_COMPARE: begin
-                
-                if (cpu_address != 10'b0) begin
-                
-                    if (hit) begin
+                if (rst == 1'b0) begin
+                    hit = valid[latched_index] && (cache_tag[latched_index] == latched_tag);
+                    if (hit == 1'b1) begin
                         // On hit, immediately serve the CPU.
                         next_state = IDLE_COMPARE;
                         cache_ready = 1'b1;
@@ -108,6 +110,7 @@ module Cache(
             end
             
             WRITEBACK: begin
+                cache_ready = 1'b0;
                 // Write-back: write one half (word) per cycle.
                 mem_req = 1'b1;
                 mem_rw  = 1'b1;  // Write operation.
@@ -123,6 +126,7 @@ module Cache(
             end
             
             ALLOCATION: begin
+                cache_ready = 1'b0;
                 // Allocation: read one half (word) per cycle.
                 mem_req = 1'b1;
                 mem_rw  = 1'b0;  // Read operation.
@@ -138,7 +142,7 @@ module Cache(
     end
 
     // Sequential block: state update and proper mem_phase toggling.
-    always @(posedge clk or posedge rst) begin
+    always @(posedge clk, posedge rst) begin
         if (rst) begin
             state <= IDLE_COMPARE;
             mem_phase <= 0;
@@ -158,15 +162,13 @@ module Cache(
 
     // Latch the faulting address and CPU signals when a miss is detected.
     // This ensures the correct index, tag, offset and CPU_RW value are used later in allocation.
-    always @(posedge clk) begin
-        if (state == IDLE_COMPARE && (cpu_address != 10'b0) && !hit) begin
+    always @(*) begin
+        if (state == IDLE_COMPARE && !hit) begin
             latched_index   <= cpu_address[4:1];
             latched_tag     <= cpu_address[9:5];
             latched_offset  <= cpu_address[0];
             latched_cpu_rw  <= CPU_RW;
-            // Also latch CPU write data if this is a write miss.
-            if (CPU_RW)
-                latched_cpu_data <= cpu_data_in;
+            latched_cpu_data <= cpu_data_in;
         end
     end
 
@@ -277,8 +279,6 @@ module tb_Cache();
         cpu_data_in = 10'd0;
         cpu_address = 10'd0;
         mem_ready = 1;    // For simplicity, assume memory is always ready.
-        #(2*PERIOD);
-        rst = 0;
         #(PERIOD);
 
         //---------------------------------------------------
@@ -287,13 +287,16 @@ module tb_Cache();
         // We choose addresses that map to different indices.
         
         // Write to address 50 (binary example).
+        rst = 0;
         cpu_address = 10'b0000110010;  
         CPU_RW = 0; // Write mode.
+        cpu_data_in = 10'd0;
          #(PERIOD);
         
         // Write to address 67.
         cpu_address = 10'b0001000011;  
         CPU_RW = 0;
+        cpu_data_in = 10'd0;
         #(PERIOD);
         
 //        cpu_address = 10'd50;  
