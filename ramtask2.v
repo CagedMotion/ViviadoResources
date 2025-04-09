@@ -5,7 +5,7 @@ module ramtask2(
     input  wire       clk,     // Clock signal
     input  wire       we,      // Write enable
     input  wire [9:0] address, // 10-bit address input
-    input  wire [9:0] wdata    // 10-bit write data
+    input  wire [19:0] wdata    // 10-bit write data
 );
 
     // Memory array: 1024 entries of 10 bits each.
@@ -50,6 +50,10 @@ module ramtask2(
     // write "wdata" into the memory at the given "address".
     always @(posedge clk) begin
         if (we)
-            ram[address] <= wdata;
+            if (address[0]==1'b1)
+                ram[address] <= wdata[19:10];
+            else 
+                ram[address] <= wdata[19:10];
+        end
     end
 endmodule
