@@ -1,11 +1,11 @@
 `timescale 1ns / 1ps
 
 module ramtask2(
-    output wire [19:0] rdata,   // 10-bit data output
+    output wire [19:0] rdata,   // 20-bit data output
     input  wire       clk,     // Clock signal
     input  wire       we,      // Write enable
     input  wire [9:0] address, // 10-bit address input
-    input  wire [19:0] wdata    // 10-bit write data
+    input  wire [19:0] wdata    // 20-bit write data
 );
 
     // Memory array: 1024 entries of 10 bits each.
