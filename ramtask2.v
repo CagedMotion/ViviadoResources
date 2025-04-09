@@ -1,7 +1,7 @@
 `timescale 1ns / 1ps
 
 module ramtask2(
-    output wire [19:0] rdata,   // 10-bit data output
+    output wire [9:0] rdata,   // 10-bit data output
     input  wire       clk,     // Clock signal
     input  wire       we,      // Write enable
     input  wire [9:0] address, // 10-bit address input
@@ -39,11 +39,11 @@ module ramtask2(
         ram[95] = 10'b0000000001;
      end
 
-    wire [8:0] temp;
-    assign temp = address [9:1];
+//    wire [8:0] temp;
+//    assign temp = address [9:1];
     // Asynchronous read: rdata immediately reflects the memory content at "address"
-    assign rdata = {ram[{temp[8:0], 1'b1}], ram[{temp[8:0], 1'b0}]};
-
+    //assign rdata = {ram[{temp[8:0], 1'b1}], ram[{temp[8:0], 1'b0}]};
+    assign rdata = ram[address];
     // Synchronous write: On the rising edge, if "we" is asserted,
     // write "wdata" into the memory at the given "address".
     always @(posedge clk) begin
