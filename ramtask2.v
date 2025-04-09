@@ -5,7 +5,7 @@ module ramtask2(
     input  wire       clk,     // Clock signal
     input  wire       we,      // Write enable
     input  wire [9:0] address, // 10-bit address input
-    input  wire [9:0] wdata    // 10-bit write data
+    input  wire [19:0] wdata    // 10-bit write data
 );
 
     // Memory array: 1024 entries of 10 bits each.
