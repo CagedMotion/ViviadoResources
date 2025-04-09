@@ -49,7 +49,11 @@ module ramtask2(
     // Synchronous write: On the rising edge, if "we" is asserted,
     // write "wdata" into the memory at the given "address".
     always @(posedge clk) begin
-        if (we)
-            ram[address] <= wdata;
+         if (we) begin
+            if (address[0]==1'b1)
+                ram[address] <= wdata[19:10];
+            else 
+                ram[address] <= wdata[9:0];
+        end
     end
 endmodule
