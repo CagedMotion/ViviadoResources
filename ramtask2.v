@@ -53,7 +53,7 @@ module ramtask2(
             if (address[0]==1'b1)
                 ram[address] <= wdata[19:10];
             else 
-                ram[address] <= wdata[19:10];
+                ram[address] <= wdata[9:0];
         end
     end
 endmodule
