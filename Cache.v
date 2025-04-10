@@ -204,7 +204,7 @@ module tb_Cache();
     wire [9:0] cpu_data_bus, cpu_data_read;
     
     // Connection between RAM and Cache for read data
-    reg mem_ready;
+    wire mem_ready;
     
     
     // Instantiate the Cache module.
@@ -228,6 +228,7 @@ module tb_Cache();
         .data(mem_data_ram_bus),
         .clk(clk),
         .we(ram_we),
+        .mem_ready(mem_ready),
         .address(mem_addr)
     );
         
@@ -249,7 +250,6 @@ module tb_Cache();
         CPU_RW = 0;
         cpu_data_write = 10'd0;
         cpu_address = 10'd0;
-        mem_ready = 1;    // For simplicity, assume memory is always ready.
         #(PERIOD);
 
         //---------------------------------------------------

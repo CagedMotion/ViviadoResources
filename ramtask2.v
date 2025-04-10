@@ -2,6 +2,7 @@
 
 module ramtask2(
     inout wire [19:0] data,   // 10-bit data output
+    output reg mem_ready,
     input  wire       clk,     // Clock signal
     input  wire       we,      // Write enable
     input  wire [9:0] address // 10-bit address input
@@ -11,6 +12,7 @@ module ramtask2(
     reg [9:0] ram[1023:0];
     
     initial begin
+        mem_ready = 1'b1;
         ram[0] = 10'b0000001010; //address location for where the numbers are located.
         ram[1] = 10'b1001000000;
         ram[2] = 10'b0101001011;
@@ -51,16 +53,19 @@ module ramtask2(
 //    assign rdata = ram[address];
     // Synchronous write: On the rising edge, if "we" is asserted,
     // write "wdata" into the memory at the given "address".
-    wire write_delay_counter;
+    
     always @(posedge clk) begin
-         if (we) begin
-             if (write_delay_counter == 1'b1) begin
-                write_delay_counter = 1'b0;
-                if (address[0]==1'b1)
+        if (we) begin
+            if (mem_ready == 1'b0) begin
+                mem_ready = 1'b1;
+                if (address[0]==1'b1) begin
                     ram[address] <= data[19:10];
-                else 
+                end else begin
                     ram[address] <= data[9:0];
-        end else begin
-            write_delay_counter = 1'b1;
+                end
+            end else begin
+                mem_ready = 1'b0;
+            end
+        end
     end
 endmodule
