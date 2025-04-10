@@ -336,13 +336,13 @@ module tb_Cache();
         // Same index but a different tag to force eviction.
         cpu_address = 10'd223;
         CPU_RW = 0; // Read mode triggers allocation.
-        #(3*PERIOD);
+        #(1*PERIOD);
         
         // Now, write new data into address 70.
         cpu_address = 10'd223;
         CPU_RW = 1;
-        cpu_data_write = 10'd777;
-        #(3*PERIOD);
+        cpu_data_write = 10'd500;
+        #(1*PERIOD);
         
         // Read back address 70.
         cpu_address = 10'd223;
