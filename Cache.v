@@ -10,8 +10,7 @@ module Cache(
     inout wire [9:0] cpu_data_bus,
     output reg cache_ready,
     output reg [9:0] mem_addr,
-    output reg mem_rw,
-    output reg mem_req
+    output reg mem_rw
     );
     
     // Cache arrays.
@@ -82,7 +81,6 @@ module Cache(
         // Default assignments.
         next_state    = IDLE_COMPARE;
         cache_ready   = 1'b1;
-        mem_req       = 0;
         mem_rw        = 0;
         mem_addr      = 10'b0;
         mem_data_ram_store_bus = 10'b0;
@@ -122,7 +120,6 @@ module Cache(
             WRITEBACK: begin
                 cache_ready = 1'b0;
                 // Write-back: write one half (word) per cycle.
-                mem_req = 1'b1;
                 mem_rw  = 1'b1;  // Write operation.
                 // Note: using current cpu_index here assumes the miss address is valid.
                 mem_addr = {cache_tag[cpu_index], cpu_index, cpu_offset};
@@ -133,7 +130,6 @@ module Cache(
             ALLOCATION: begin
                 cache_ready = 1'b0;
                 // Allocation: read one half (word) per cycle.
-                mem_req = 1'b1;
                 mem_rw  = 1'b0;  // Read operation.
                 // Use the latched tag and index (from when the miss occurred)
                 mem_addr = {cpu_tag, cpu_index, cpu_offset};
@@ -205,20 +201,17 @@ module tb_Cache();
     reg CPU_RW;           // 0: read, 1: write.
     reg [9:0] cpu_data_write;
     reg [9:0] cpu_address;
-    wire [9:0] cpu_data_out;
     wire cache_ready;
     
     // Memory interface signals between Cache and RAM.
     wire [9:0] mem_addr;
     reg [19:0] mem_data_ram_write;
     wire mem_rw;
-    wire mem_req;
     
     wire [19:0] mem_data_ram_bus, mem_data_ram_read;
     wire [9:0] cpu_data_bus, cpu_data_read;
     
-    // Connection between RAM and Cache for read data.
-    wire [19:0] ram_rdata;
+    // Connection between RAM and Cache for read data
     reg mem_ready;
 
     // Instantiate the Cache module.
@@ -228,12 +221,11 @@ module tb_Cache();
         .CPU_RW(CPU_RW),
         .cpu_data_bus(cpu_data_bus),
         .cpu_address(cpu_address),
-        .mem_data_ram_bus(mem_data_ram_read),       // Data coming from RAM.
+        .mem_data_ram_bus(mem_data_ram_bus),
         .mem_ready(mem_ready),
         .cache_ready(cache_ready),
         .mem_addr(mem_addr),
-        .mem_rw(mem_rw),
-        .mem_req(mem_req)
+        .mem_rw(mem_rw)
     );
 
     // Instantiate the RAM module.
@@ -244,7 +236,7 @@ module tb_Cache();
         .clk(clk),
         .we(ram_we),
         .address(mem_addr),
-        .wdata(mem_data_ram_read)
+        .wdata(mem_data_ram_write)
     );
     
     assign mem_data_ram_bus = (mem_rw == 1'b1) ?
@@ -257,11 +249,9 @@ module tb_Cache();
     
     // Clock generation: 10 ns period.
     parameter PERIOD = 10;
-    initial begin
-        clk = 1;
-        forever #(PERIOD/2) clk = ~clk;
-    end
-
+    initial clk = 1;
+    always #(PERIOD/2) clk = ~clk;
+    
     assign cpu_data_bus_read = cpu_data_bus;
     assign mem_data_ram_read = mem_data_ram_bus;
     
