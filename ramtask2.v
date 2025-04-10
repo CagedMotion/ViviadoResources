@@ -54,7 +54,30 @@ module ramtask2(
     // Synchronous write: On the rising edge, if "we" is asserted,
     // write "wdata" into the memory at the given "address".
     
+    
+        reg state, next_state;
+    always @() begin
+        next_state = 1'b0;
+        case (state)
+            1'b0: begin
+                if (mem_ready==1'b1) begin
+                   mem_ready=1'b0;
+                   next_state = 1'b1;
+                end
+            end
+            1'b1: begin
+                next_state = 1'b0;
+                mem_ready=1'b1;
+            end
+        endcase 
+        
+    end
+    
+    
+    
+    
     always @(posedge clk) begin
+        state = next_state;
         if (we) begin
             if (mem_ready == 1'b0) begin
                 mem_ready = 1'b1;
