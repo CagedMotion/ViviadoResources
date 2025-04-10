@@ -51,12 +51,16 @@ module ramtask2(
 //    assign rdata = ram[address];
     // Synchronous write: On the rising edge, if "we" is asserted,
     // write "wdata" into the memory at the given "address".
+    wire write_delay_counter;
     always @(posedge clk) begin
          if (we) begin
-            if (address[0]==1'b1)
-                ram[address] <= data[19:10];
-            else 
-                ram[address] <= data[9:0];
-        end
+             if (write_delay_counter == 1'b1) begin
+                write_delay_counter = 1'b0;
+                if (address[0]==1'b1)
+                    ram[address] <= data[19:10];
+                else 
+                    ram[address] <= data[9:0];
+        end else begin
+            write_delay_counter = 1'b1;
     end
 endmodule
