@@ -37,8 +37,8 @@ module Cache(
     wire [19:0] mem_data_ram_write, mem_data_ram_read;
     wire [9:0] cpu_data_write, cpu_data_read;
     assign mem_data_ram_bus = (mem_rw == 1'b1) ?
-        20'bzzzzzzzzzz_zzzzzzzzzz :
-        mem_data_ram_read;
+        mem_data_ram_read :
+        20'bzzzzzzzzzz_zzzzzzzzzz;
         
     assign cpu_data_bus = (CPU_RW == 1'b1) ?
         10'bzzzzzzzzzz :
@@ -67,15 +67,7 @@ module Cache(
             cache_data[i] <= 20'd0;
         end
     end
-  
-    //bidir buses for getting the memory to and from the ram or cpu_data.
-    always @(posedge clk) begin
-        if (CPU_RW == 1'b1) begin
-            cpu_data_store_bus = cpu_data_write;
-            mem_data_ram_store_bus = mem_data_ram_write;
-        end
-    end
-
+    
     // Combinational block: Next state and output signals.
     always @(IDLE_COMPARE, WRITEBACK, ALLOCATION, state, cpu_address, hit, rst, mem_ready, cpu_index, CPU_RW, cpu_offset, cpu_tag) begin
         // Default assignments.
@@ -83,26 +75,30 @@ module Cache(
         cache_ready   = 1'b1;
         mem_rw        = 0;
         mem_addr      = 10'b0;
-        mem_data_ram_store_bus = 10'b0;
+        mem_data_ram_store_bus = 20'b0;
         cpu_data_store_bus  = 10'b0;
         hit = 1'b0;
         
         case (state)
             IDLE_COMPARE: begin
+                cache_ready = 1'b1;
                 if (rst == 1'b0) begin
                     hit = valid[cpu_index] && (cache_tag[cpu_index] == cpu_tag);
                     if (hit == 1'b1) begin
                         // On hit, immediately serve the CPU.
-                        next_state = IDLE_COMPARE;
-                        cache_ready = 1'b1;
-                        if (!CPU_RW) begin
-                            // Read: pick the appropriate half from the cache.
-                            cpu_data_store_bus = (cpu_offset) ? cache_data[cpu_index][19:10]
-                                                        : cache_data[cpu_index][9:0];
+                        if (dirty[cpu_index] == 1'b0) begin
+                            next_state = IDLE_COMPARE;
+                            if (!CPU_RW) begin
+                                // Read: pick the appropriate half from the cache.
+                                cpu_data_store_bus = (cpu_offset) ? cache_data[cpu_index][19:10]
+                                                            : cache_data[cpu_index][9:0];
+                            end else begin
+                                // For a write hit, you might just echo back the CPU data.
+                                cpu_data_store_bus = (cpu_offset) ? cache_data[cpu_index][19:10]
+                                                            : cache_data[cpu_index][9:0];
+                            end
                         end else begin
-                            // For a write hit, you might just echo back the CPU data.
-                            cpu_data_store_bus = (cpu_offset) ? cache_data[cpu_index][19:10]
-                                                        : cache_data[cpu_index][9:0];
+                            next_state = WRITEBACK;
                         end
                     end else begin
                         // On miss, choose to either write-back (if dirty) or allocate.
@@ -123,7 +119,7 @@ module Cache(
                 mem_rw  = 1'b1;  // Write operation.
                 // Note: using current cpu_index here assumes the miss address is valid.
                 mem_addr = {cache_tag[cpu_index], cpu_index, cpu_offset};
-                mem_data_ram_store_bus = cache_data[cpu_index][19:0];
+                mem_data_ram_store_bus = cache_data[cpu_index];
                 next_state = ALLOCATION;
             end
             
@@ -156,9 +152,6 @@ module Cache(
     // Sequential block for capturing data from memory and updating the cache.
     always @(posedge clk) begin
         // During ALLOCATION, capture the incoming data from RAM.
-        if (state == ALLOCATION && mem_ready) begin
-            
-        end
 
         // When allocation finishes (after both halves have been fetched), update the cache.
         if (state == ALLOCATION && mem_ready) begin
@@ -169,15 +162,15 @@ module Cache(
                 // Write miss: update the appropriate half using the latched CPU data.
                 if (cpu_offset) begin
                     // CPU intended to write to the upper half.
-                    cache_data[cpu_index] <= cpu_data_store_bus;
+                    cache_data[cpu_index][19:10] <= cpu_data_store_bus; //fix?
                 end else begin
                     // CPU intended to write to the lower half.
-                    cache_data[cpu_index] <= cpu_data_store_bus;
+                    cache_data[cpu_index][9:0] <= cpu_data_store_bus; //fix?
                 end
                 dirty[cpu_index] <= 1'b1;
             end else begin
                 // Read miss: simply store both halves from memory.
-                cache_data[cpu_index] <= mem_data_ram_store_bus;
+                cache_data[cpu_index] <= mem_data_ram_write; //fix?
                 dirty[cpu_index] <= 1'b0;
             end
         end
@@ -185,9 +178,9 @@ module Cache(
         // For write hits (when the block is already in the cache), update the cache directly.
         if (state == IDLE_COMPARE && hit && CPU_RW) begin
             if (cpu_offset)
-                cache_data[cpu_index][19:10] <= cpu_data_store_bus;
+                cache_data[cpu_index][19:10] <= cpu_data_write;
             else
-                cache_data[cpu_index][9:0]  <= cpu_data_store_bus;
+                cache_data[cpu_index][9:0]  <= cpu_data_write;
             dirty[cpu_index] <= 1'b1;
         end
     end
@@ -205,15 +198,15 @@ module tb_Cache();
     
     // Memory interface signals between Cache and RAM.
     wire [9:0] mem_addr;
-    reg [19:0] mem_data_ram_write;
     wire mem_rw;
     
-    wire [19:0] mem_data_ram_bus, mem_data_ram_read;
+    wire [19:0] mem_data_ram_bus;
     wire [9:0] cpu_data_bus, cpu_data_read;
     
     // Connection between RAM and Cache for read data
     reg mem_ready;
-
+    
+    
     // Instantiate the Cache module.
     Cache cache_inst (
         .clk(clk),
@@ -232,16 +225,11 @@ module tb_Cache();
     // When mem_rw = 1, the write enable is asserted.
     wire ram_we = mem_rw;
     ramtask2 ram_inst (
-        .rdata(mem_data_ram_bus),
+        .data(mem_data_ram_bus),
         .clk(clk),
         .we(ram_we),
-        .address(mem_addr),
-        .wdata(mem_data_ram_write)
+        .address(mem_addr)
     );
-    
-    assign mem_data_ram_bus = (mem_rw == 1'b1) ?
-            mem_data_ram_write  :
-            20'bzzzzzzzzzz_zzzzzzzzzz;
         
     assign cpu_data_bus = (CPU_RW == 1'b1) ?
             cpu_data_write :
@@ -252,8 +240,7 @@ module tb_Cache();
     initial clk = 1;
     always #(PERIOD/2) clk = ~clk;
     
-    assign cpu_data_bus_read = cpu_data_bus;
-    assign mem_data_ram_read = mem_data_ram_bus;
+    assign cpu_data_read = cpu_data_bus;
     
     // Test sequence.
     initial begin
@@ -328,7 +315,7 @@ module tb_Cache();
         // Test 3: Write hit - update one location.
         //---------------------------------------------------
         // Update address 50 with new data.
-        cpu_address = 10'd50;
+        cpu_address = 10'd84;
         CPU_RW = 1;
         cpu_data_write = 10'd150; 
         #(3*PERIOD);

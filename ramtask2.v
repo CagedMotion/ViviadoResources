@@ -1,11 +1,10 @@
 `timescale 1ns / 1ps
 
 module ramtask2(
-    output wire [19:0] rdata,   // 10-bit data output
+    inout wire [19:0] data,   // 10-bit data output
     input  wire       clk,     // Clock signal
     input  wire       we,      // Write enable
-    input  wire [9:0] address, // 10-bit address input
-    input  wire [19:0] wdata    // 10-bit write data
+    input  wire [9:0] address // 10-bit address input
 );
 
     // Memory array: 1024 entries of 10 bits each.
@@ -21,7 +20,7 @@ module ramtask2(
 //        ram[11] = 10'b1111111101; // value -3
         ram[12] = 10'b0000000000; 
         
-        ram[50] = 10'b0000000001;
+        ram[50] = 10'b0000001001;
         ram[51] = 10'b0000000001;
         ram[52] = 10'b0000000001;
         ram[53] = 10'b0000000001;
@@ -43,17 +42,21 @@ module ramtask2(
 
     wire [8:0] temp;
     assign temp = address [9:1];
-//     Asynchronous read: rdata immediately reflects the memory content at "address"
-    assign rdata = {ram[{temp[8:0], 1'b1}], ram[{temp[8:0], 1'b0}]};
+    
+    assign data = (we == 1'b1) ?
+        20'bzzzzzzzzzz_zzzzzzzzzz :
+        {ram[{temp[8:0], 1'b1}], ram[{temp[8:0], 1'b0}]};
+        
+    
 //    assign rdata = ram[address];
     // Synchronous write: On the rising edge, if "we" is asserted,
     // write "wdata" into the memory at the given "address".
     always @(posedge clk) begin
          if (we) begin
             if (address[0]==1'b1)
-                ram[address] <= wdata[19:10];
+                ram[address] <= data[19:10];
             else 
-                ram[address] <= wdata[9:0];
+                ram[address] <= data[9:0];
         end
     end
 endmodule
