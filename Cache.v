@@ -10,7 +10,8 @@ module Cache(
     inout wire [9:0] cpu_data_bus,
     output reg cache_ready,
     output reg [9:0] mem_addr,
-    output reg mem_rw
+    output reg mem_rw,
+    output reg mem_req
     );
     
     // Cache arrays.
@@ -74,6 +75,7 @@ module Cache(
         next_state    = IDLE_COMPARE;
         cache_ready   = 1'b1;
         mem_rw        = 0;
+        mem_req       = 1'b0;
         mem_addr      = 10'b0;
         mem_data_ram_store_bus = 20'b0;
         cpu_data_store_bus  = 10'b0;
@@ -117,6 +119,7 @@ module Cache(
                 cache_ready = 1'b0;
                 // Write-back: write one half (word) per cycle.
                 mem_rw  = 1'b1;  // Write operation.
+                mem_req = 1'b1;
                 // Note: using current cpu_index here assumes the miss address is valid.
                 mem_addr = {cache_tag[cpu_index], cpu_index, cpu_offset};
                 mem_data_ram_store_bus = cache_data[cpu_index];
@@ -127,9 +130,8 @@ module Cache(
                 cache_ready = 1'b0;
                 // Allocation: read one half (word) per cycle.
                 mem_rw  = 1'b0;  // Read operation.
-                // Use the latched tag and index (from when the miss occurred)
+                mem_req = 1'b1;
                 mem_addr = {cpu_tag, cpu_index, cpu_offset};
-                // Once both halves are read, finish allocation.
                 if (mem_ready)
                     next_state = IDLE_COMPARE;
             end
@@ -205,7 +207,7 @@ module tb_Cache();
     
     // Connection between RAM and Cache for read data
     wire mem_ready;
-    
+    wire mem_req;
     
     // Instantiate the Cache module.
     Cache cache_inst (
@@ -218,7 +220,8 @@ module tb_Cache();
         .mem_ready(mem_ready),
         .cache_ready(cache_ready),
         .mem_addr(mem_addr),
-        .mem_rw(mem_rw)
+        .mem_rw(mem_rw),
+        .mem_req(mem_req)
     );
 
     // Instantiate the RAM module.
@@ -229,7 +232,8 @@ module tb_Cache();
         .clk(clk),
         .we(ram_we),
         .mem_ready(mem_ready),
-        .address(mem_addr)
+        .address(mem_addr),
+        .mem_req(mem_req)
     );
         
     assign cpu_data_bus = (CPU_RW == 1'b1) ?
@@ -253,38 +257,35 @@ module tb_Cache();
         #(PERIOD);
 
         //---------------------------------------------------
-        // Test 1: Write to 4 distinct cache locations.
+        // Test 1: Write to 5 distinct cache locations.
         //---------------------------------------------------
         // We choose addresses that map to different indices.
-        
+        // the first two are cache misses which load from ram
         // Write to address 50 (binary example).
         rst = 0;
         cpu_address = 10'b0000110010;  
         CPU_RW = 0; // Write mode.
         cpu_data_write = 10'd0;
-         #(3*PERIOD);
+         #(2*PERIOD);
         
         // Write to address 67.
         cpu_address = 10'b0001000011;  
         CPU_RW = 0;
         cpu_data_write = 10'd0;
-        #(3*PERIOD);
-        
-//        cpu_address = 10'd50;  
-//        CPU_RW = 0; // Read mode.
-//        #(PERIOD);
+        #(2*PERIOD);
 
-        // Write to address 83.
-        cpu_address = 10'd84;  
+        //this part deals with the cpu_data_in part.
+        // Write to address 84.
+        cpu_address = 10'b0001010100;  
         CPU_RW =1;
         cpu_data_write = 10'd300;
-        #(3*PERIOD);
+        #(2*PERIOD);
         
         // Write to address 95.
-        cpu_address = 10'd95;  
+        cpu_address = 10'b0001011111;  
         CPU_RW = 1;
         cpu_data_write = 10'd400;
-        #(3*PERIOD);
+        #(2*PERIOD);
         
         // Write to address 150.
         cpu_address = 10'b0010010110;
@@ -297,20 +298,24 @@ module tb_Cache();
         //---------------------------------------------------
         cpu_address = 10'd50;  
         CPU_RW = 0; // Read mode.
-        #(3*PERIOD);
+        #(PERIOD);
         
         cpu_address = 10'd67;  
         CPU_RW = 0;
-        #(3*PERIOD);
+        #(PERIOD);
         
         cpu_address = 10'd84;  
         CPU_RW = 0;
-        #(3*PERIOD);
+        #(PERIOD);
         
         cpu_address = 10'd95;  
         CPU_RW = 0;
-        #(3*PERIOD);
-
+        #(PERIOD);
+        
+        cpu_address = 10'd150;
+        CPU_RW = 0;
+        #(PERIOD)
+        
         //---------------------------------------------------
         // Test 3: Write hit - update one location.
         //---------------------------------------------------
@@ -321,7 +326,7 @@ module tb_Cache();
         #(3*PERIOD);
         
         // Read back address 50.
-        cpu_address = 10'd50;
+        cpu_address = 10'd84;
         CPU_RW = 0;
         #(3*PERIOD);
 
@@ -329,18 +334,18 @@ module tb_Cache();
         // Test 4: Eviction with Write-Back.
         //---------------------------------------------------
         // Same index but a different tag to force eviction.
-        cpu_address = 10'd70;
+        cpu_address = 10'd223;
         CPU_RW = 0; // Read mode triggers allocation.
         #(3*PERIOD);
         
         // Now, write new data into address 70.
-        cpu_address = 10'd70;
+        cpu_address = 10'd223;
         CPU_RW = 1;
         cpu_data_write = 10'd777;
         #(3*PERIOD);
         
         // Read back address 70.
-        cpu_address = 10'd70;
+        cpu_address = 10'd223;
         CPU_RW = 0;
         #(3*PERIOD);
 
@@ -349,13 +354,13 @@ module tb_Cache();
         //---------------------------------------------------
         cpu_address = 10'd67;
         CPU_RW = 0;
-        #(3*PERIOD);
+        #(PERIOD);
         
         cpu_address = 10'd84;
         CPU_RW = 0;
-        #(3*PERIOD);
+        #(PERIOD);
 
-        #(5*PERIOD);
+        #(PERIOD);
         $finish;
     end
 endmodule
