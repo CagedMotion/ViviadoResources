@@ -166,7 +166,7 @@ module Cache(
         end else if (~(valid[cpu_index] && (cache_tag[cpu_index] == cpu_tag))) begin
                 temporary_address <= cpu_address;
                 temporary_CPU_RW <= CPU_RW;
-                temporary_data <= cpu_data_write;
+                temporary_cpu_data <= cpu_data_write;
         end
     end
     
