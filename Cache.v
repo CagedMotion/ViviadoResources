@@ -55,9 +55,9 @@ module Cache(
     reg hit;
     //    valid[cpu_index] && (cache_tag[cpu_index] == cpu_tag);
         
-    reg [9:0] latched_address;
-    reg       latched_CPU_RW;
-    reg [9:0] latched_cpu_data;   
+    reg [9:0] temporary_address;
+    reg       temporary_CPU_RW;
+    reg [9:0] temporary_cpu_data;   
         
     // Initializations.
     integer i;
@@ -71,9 +71,9 @@ module Cache(
             cache_tag[i] <= 5'b00000;
             cache_data[i] <= 20'd0;
         end
-        latched_address <= 10'd0;
-        latched_CPU_RW <= 1'b0;
-        latched_cpu_data <= 10'd0;
+        temporary_address <= 10'd0;
+        temporary_CPU_RW <= 1'b0;
+        temporary_cpu_data <= 10'd0;
     end
     
     // Combinational block: Next state and output signals.
@@ -138,7 +138,7 @@ module Cache(
                 // Allocation: read one half (word) per cycle.
                 mem_rw  = 1'b0;  // Read operation.
                 mem_req = 1'b1;
-                mem_addr = {latched_address[9:5], latched_address[4:1], latched_address[0]};
+                mem_addr = {temporary_address[9:5], temporary_address[4:1], temporary_address[0]};
                 if (mem_ready)
                     next_state = IDLE_COMPARE;
             end
@@ -160,13 +160,13 @@ module Cache(
     // This ensures the correct index, tag, offset and CPU_RW value are used later in allocation.
     always @(posedge clk) begin
         if (rst) begin
-            latched_address <= 10'd0;
-            latched_CPU_RW <= 1'b0;
-            latched_cpu_data <= 10'd0;
+            temporary_address <= 10'd0;
+            temporary_CPU_RW <= 1'b0;
+            temporary_cpu_data <= 10'd0;
         end else if (~(valid[cpu_index] && (cache_tag[cpu_index] == cpu_tag))) begin
-                latched_address <= cpu_address;
-                latched_CPU_RW <= CPU_RW;
-                latched_cpu_data <= cpu_data_write;
+                temporary_address <= cpu_address;
+                temporary_CPU_RW <= CPU_RW;
+                temporary_cpu_data <= cpu_data_write;
         end
     end
     
@@ -175,19 +175,19 @@ module Cache(
         // Allocation: capture memory data and update the cache using the latched info.
         if (state == ALLOCATION && mem_ready) begin
             // Use the latched address to determine the cache index and tag.
-            cache_tag[latched_address[4:1]] <= latched_address[9:5];
-            valid[latched_address[4:1]]     <= 1'b1;
-            if (latched_CPU_RW) begin
+            cache_tag[temporary_address[4:1]] <= temporary_address[9:5];
+            valid[temporary_address[4:1]]     <= 1'b1;
+            if (temporary_CPU_RW) begin
                 // For a write miss, only one half is updated from the latched CPU data.
-                if (latched_address[0])
-                    cache_data[latched_address[4:1]][19:10] <= latched_cpu_data;
+                if (temporary_address[0])
+                    cache_data[temporary_address[4:1]][19:10] <= temporary_cpu_data;
                 else
-                    cache_data[latched_address[4:1]][9:0] <= latched_cpu_data;
-                dirty[latched_address[4:1]] <= 1'b1;
+                    cache_data[temporary_address[4:1]][9:0] <= temporary_cpu_data;
+                dirty[temporary_address[4:1]] <= 1'b1;
             end else begin
                 // For a read miss, the full block is fetched from memory.
-                cache_data[latched_address[4:1]] <= mem_data_ram_write;
-                dirty[latched_address[4:1]] <= 1'b0;
+                cache_data[temporary_address[4:1]] <= mem_data_ram_write;
+                dirty[temporary_address[4:1]] <= 1'b0;
             end
         end
 
@@ -263,9 +263,14 @@ module tb_Cache();
     
     task wait_for_cache_ready;
     begin
-        while (cache_ready == 1'b0)
-            @(posedge clk);
-        end
+         while (cache_ready == 1'b0)
+              @(posedge clk);
+         // Once cache_ready first goes high, wait one full cycle.
+         @(posedge clk);
+         // Confirm that cache_ready remains high; if not, keep waiting.
+         while (cache_ready == 1'b0)
+              @(posedge clk);
+         end
     endtask
 
     // Test sequence.
