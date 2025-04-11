@@ -41,16 +41,16 @@ module cache_pipeline_CPU10bits(
 //        .read_data(instr)
 //    );
 
- //    Instruction Memory (ROM)
-//    task2rom ROM_inst (
-//        .address(pc),
-//        .read_data(instr)
-//    );
-    
-    task3rom ROM_inst (
+    //Instruction Memory (ROM)
+    task2rom ROM_inst (
         .address(pc),
         .read_data(instr)
     );
+    
+//    task3rom ROM_inst (
+//        .address(pc),
+//        .read_data(instr)
+//    );
 
     // Decode the instruction fields according to ISA design.
     wire [2:0] opcode   = instr[9:7];
@@ -81,6 +81,15 @@ module cache_pipeline_CPU10bits(
         .raddr2(rt_field),
         .rdata1(fd_rdata1),
         .rdata2(fd_rdata2)
+    );
+    
+    // Instantiate the hazard unit:
+    wire stall;
+    hazard_unit hu_inst(
+        .clk(clk),
+        .rst(rst),
+        .cache_ready(cache_ready), // from the Cache module
+        .stall(stall)
     );
 
     // Signals for FD stage (to be latched into FD->EM pipeline register)
@@ -265,10 +274,38 @@ module cache_pipeline_CPU10bits(
         .halt(alu_halt)
     );
 
-    // Data Memory
-    wire [9:0] mem_rdata;
-    wire [9:0] mem_addr  = alu_result;
-    wire [9:0] mem_wdata = (em_mem_we) ? em_store_data : 10'd0;
+    //-------------------------------------------------------------------------
+    // Instead of connecting the ALU output directly to a RAM instance,
+    // insert the Cache here between the EM->WB pipeline register and the RAM.
+    //
+    // The Cache takes the effective address (alu_result) and the memory control
+    // signals. We set its CPU interface control (CPU_RW) from em_mem_we (1 => STORE,
+    // 0 => LOAD). The Cache then drives the external RAM (ramtask2) via its
+    // dedicated bus.
+    //-------------------------------------------------------------------------
+
+    // Signals on the CPU side of the Cache (10-bit data bus).
+    wire [9:0] cache_cpu_data;
+    // Signals on the RAM side of the Cache (20-bit bidirectional bus).
+    wire [19:0] ram_data_bus;
+    wire [9:0]  cache_mem_addr;
+    wire        cache_mem_rw;
+    wire        cache_mem_req;
+    wire        mem_ready_from_RAM;
+    
+    Cache Cache_inst (
+         .clk(clk),
+         .rst(rst),
+         .CPU_RW(em_mem_we),        // Use mem_we as store indicator (1: write, 0: read)
+         .cpu_address(alu_result),   // Effective address from the ALU
+         .mem_ready(mem_ready_from_RAM),
+         .mem_data_ram_bus(ram_data_bus),
+         .cpu_data_bus(cache_cpu_data),  // Data output for load operations
+         .cache_ready(cache_ready),            // (Optional: can be used for stall control)
+         .mem_addr(cache_mem_addr),
+         .mem_rw(cache_mem_rw),
+         .mem_req(cache_mem_req)
+    );
 
 //    ramtask1 RAM_inst (
 //        .clk(clk),
@@ -278,21 +315,22 @@ module cache_pipeline_CPU10bits(
 //        .rdata(mem_rdata)
 //    );
 
-//    ramtask2 RAM_inst (
+    ramtask2 RAM_inst (
+        .clk(clk),
+        .we(cache_mem_rw),       // Write enable as driven by the Cache.
+        .address(cache_mem_addr),
+        .data(ram_data_bus),
+        .mem_ready(mem_ready_from_RAM),
+        .mem_req(cache_mem_req)
+    );
+    
+//    ramtask3 RAM_inst (
 //        .clk(clk),
 //        .we(em_mem_we),
 //        .address(mem_addr),
 //        .wdata(mem_wdata),
 //        .rdata(mem_rdata)
 //    );
-    
-    ramtask3 RAM_inst (
-        .clk(clk),
-        .we(em_mem_we),
-        .address(mem_addr),
-        .wdata(mem_wdata),
-        .rdata(mem_rdata)
-    );
 
     //----------------------------------------------------------
     // EM->WB Pipeline Register
@@ -302,7 +340,7 @@ module cache_pipeline_CPU10bits(
         .reset(rst), 
         .alu_result_in(alu_result), 
         .alu_result_out(wb_alu_result),
-        .ram_rdata_in(mem_rdata), 
+        .ram_rdata_in(cache_cpu_data),    // Use data coming from the Cache
         .ram_rdata_out(wb_mem_rdata),
         .gp_reg_wb_in(em_reg_we),
         .gp_reg_wb_out(wb_reg_we),
@@ -311,7 +349,61 @@ module cache_pipeline_CPU10bits(
         .gp_rdata2_address_in(gp_rdata2_address_out), 
         .gp_rdata2_address_out(wb_dest)
     );
-
+    
+    // Group 1: FD -> EM registers 
+    reg [9:0] em_operandA_reg, em_operandB_reg;
+    reg [2:0] em_alu_ctrl_reg;
+    reg       em_reg_we_reg, em_mem_we_reg, em_mem_re_reg;
+    reg [9:0] em_store_data_reg;
+    
+    // Group 2: EM -> WB registers
+    reg [9:0] wb_alu_result_reg;
+    reg [9:0] wb_mem_rdata_reg;
+    reg       wb_reg_we_reg, wb_mem_re_reg;
+    reg [2:0] wb_dest_reg;
+    
+    // Combined always block that updates both groups
+    always @(posedge clk or posedge rst) begin
+        if (rst) begin
+            // Reset Group 1
+            em_operandA_reg   <= 10'd0;
+            em_operandB_reg   <= 10'd0;
+            em_alu_ctrl_reg   <= 3'd0;
+            em_reg_we_reg     <= 1'b0;
+            em_mem_we_reg     <= 1'b0;
+            em_mem_re_reg     <= 1'b0;
+            em_store_data_reg <= 10'd0;
+            // Reset Group 2
+            wb_alu_result_reg <= 10'd0;
+            wb_mem_rdata_reg  <= 10'd0;
+            wb_reg_we_reg     <= 1'b0;
+            wb_mem_re_reg     <= 1'b0;
+            wb_dest_reg       <= 3'd0;
+        end else if (!stall) begin  // When there is no stall, update values
+            // Update Group 1 (e.g., FD->EM register values)
+            em_operandA_reg   <= alu_inA;   // Value from FD stage signal
+            em_operandB_reg   <= alu_inB;
+            em_alu_ctrl_reg   <= fd_alu_ctrl;
+            em_reg_we_reg     <= fd_reg_we;
+            em_mem_we_reg     <= fd_mem_we;
+            em_mem_re_reg     <= fd_mem_re;
+            em_store_data_reg <= fd_store_data;
+            // Update Group 2 (e.g., EM->WB register values)
+            wb_alu_result_reg <= alu_result;        // For example, from ALU in EM stage
+            wb_mem_rdata_reg  <= cache_cpu_data;          // Data from the cache (for loads)
+            wb_reg_we_reg     <= fd_reg_we;           // Control signal for reg writeback
+            wb_mem_re_reg     <= fd_mem_re;               // Load read signal
+            wb_dest_reg       <= dest_reg_fd;
+        end
+        // Else branch empty: stall condition holds the previous values.
+    end
+    
+    assign wb_alu_result = wb_alu_result_reg;
+    assign wb_mem_rdata  = wb_mem_rdata_reg;
+    assign wb_reg_we     = wb_reg_we_reg;
+    assign wb_mem_re     = wb_mem_re_reg;
+    assign wb_dest       = wb_dest_reg;
+    
     //----------------------------------------------------------
     // Stage 3: Writeback (WB)
     //----------------------------------------------------------
