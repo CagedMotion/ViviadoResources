@@ -45,9 +45,12 @@ module ramtask2(
         ram[85] = 10'b0000000100;
         ram[94] = 10'b0000000001;
         ram[95] = 10'b0000000001;
-        
+        ram[148] = 10'b0000010000;
+        ram[149] = 10'b0000010001;
         ram[150] = 10'b0000001000;
         ram[151] = 10'b0000001100;
+        ram[222] = 10'b0000100000;
+        ram[223] = 10'b0000001000;
      end
 
     parameter IDLE    = 2'b00; // Memory is idle and ready. mem_ready is high.
@@ -64,28 +67,28 @@ module ramtask2(
     wire [8:0] temp;
     assign temp = address [9:1];    
     
-    assign data = ((state == EXECUTE) && (we == 1'b1)) ?
+    assign data = ((state == IDLE) && (we == 1'b1)) ?
         20'bzzzzzzzzzz_zzzzzzzzzz :
         {ram[{temp[8:0], 1'b1}], ram[{temp[8:0], 1'b0}]};
     
     // state machine combinational logic always.
-//     always @(*) begin
-//        case (state)
-//            IDLE: begin
-//                if (mem_req)
-//                    next_state = WAIT;
-//                else
-//                    next_state = IDLE;
-//            end
-//            WAIT: begin
-//                next_state = EXECUTE;
-//            end
-//            EXECUTE: begin
-//                next_state = IDLE;
-//            end
-//            default: next_state = IDLE;
-//        endcase
-//    end
+     always @(*) begin
+        case (state)
+            IDLE: begin
+                if (mem_req)
+                    next_state = WAIT;
+                else
+                    next_state = IDLE;
+            end
+            WAIT: begin
+                next_state = EXECUTE;
+            end
+            EXECUTE: begin
+                next_state = IDLE;
+            end
+            default: next_state = IDLE;
+        endcase
+    end
     
     //sequential logic for the ram state machine.
     always @(posedge clk) begin
@@ -103,13 +106,6 @@ module ramtask2(
                 end else begin
                     mem_ready <= 1'b1;
                 end
-            end
-            WAIT: begin
-                // During the delay cycle, maintain mem_ready low.
-                mem_ready <= 1'b0;
-            end
-            EXECUTE: begin
-                // In EXECUTE, perform the actual read or write.
                 if (latched_we) begin
                     // Write operation:
                     // If the latched address's bit 0 is 0, write to the lower half; if 1, to the upper half.
@@ -123,6 +119,13 @@ module ramtask2(
                     read_data <= { ram[{latched_address[9:1], 1'b1}],
                                    ram[{latched_address[9:1], 1'b0}] };
                 end
+            end
+            WAIT: begin
+                // During the delay cycle, maintain mem_ready low.
+                mem_ready <= 1'b0;
+            end
+            EXECUTE: begin
+                // In EXECUTE, perform the actual read or write.
                 // After execution, signal that RAM is ready for a new operation.
                 mem_ready <= 1'b1;
             end

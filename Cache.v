@@ -89,19 +89,15 @@ module Cache(
                     hit = valid[cpu_index] && (cache_tag[cpu_index] == cpu_tag);
                     if (hit == 1'b1) begin
                         // On hit, immediately serve the CPU.
-                        if (dirty[cpu_index] == 1'b0) begin
-                            next_state = IDLE_COMPARE;
-                            if (!CPU_RW) begin
-                                // Read: pick the appropriate half from the cache.
-                                cpu_data_store_bus = (cpu_offset) ? cache_data[cpu_index][19:10]
-                                                            : cache_data[cpu_index][9:0];
-                            end else begin
-                                // For a write hit, you might just echo back the CPU data.
-                                cpu_data_store_bus = (cpu_offset) ? cache_data[cpu_index][19:10]
-                                                            : cache_data[cpu_index][9:0];
-                            end
+                        next_state = IDLE_COMPARE;
+                        if (!CPU_RW) begin
+                            // Read: pick the appropriate half from the cache.
+                            cpu_data_store_bus = (cpu_offset) ? cache_data[cpu_index][19:10]
+                                                        : cache_data[cpu_index][9:0];
                         end else begin
-                            next_state = WRITEBACK;
+                            // For a write hit, you might just echo back the CPU data.
+                            cpu_data_store_bus = (cpu_offset) ? cache_data[cpu_index][19:10]
+                                                        : cache_data[cpu_index][9:0];
                         end
                     end else begin
                         // On miss, choose to either write-back (if dirty) or allocate.
@@ -333,23 +329,23 @@ module tb_Cache();
         
         cpu_address = 10'd84;  
         CPU_RW = 0;
-        #(3*PERIOD);
+        #(1*PERIOD);
         
         cpu_address = 10'd95;  
         CPU_RW = 0;
-        #(3*PERIOD);
+        #(1*PERIOD);
 
         //---------------------------------------------------
         // Test 3: Write hit - update one location.
         //---------------------------------------------------
         // Update address 50 with new data.
-        cpu_address = 10'd84;
+        cpu_address = 10'd148;
         CPU_RW = 1;
         cpu_data_write = 10'd150; 
         #(3*PERIOD);
         
         // Read back address 50.
-        cpu_address = 10'd50;
+        cpu_address = 10'd223;
         CPU_RW = 0;
         #(3*PERIOD);
 
@@ -358,7 +354,7 @@ module tb_Cache();
         //---------------------------------------------------
         // Same index but a different tag to force eviction.
         cpu_address = 10'd70;
-        CPU_RW = 0; // Read mode triggers allocation.
+        CPU_RW = 1; // Read mode triggers allocation.
         #(3*PERIOD);
         
         // Now, write new data into address 70.
