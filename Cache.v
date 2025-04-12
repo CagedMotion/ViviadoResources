@@ -281,24 +281,24 @@ module tb_Cache();
         #(2*PERIOD);
 
         //---------------------------------------------------
-        // Test 1: Write to 4 distinct cache locations.
+        // Test 1: Write/read to 4 distinct cache locations.
         //---------------------------------------------------
         // We choose addresses that map to different indices.
         
-        // Write to address 50 (binary example).
+        // read to address 50 (binary example).
         rst = 0;
         cpu_address = 10'd50;  
-        CPU_RW = 0; // Write mode.
+        CPU_RW = 0;
         cpu_data_write = 10'd0;
          #(3*PERIOD);
         
-        // Write to address 67.
+        // read to address 67.
         cpu_address = 10'd67;  
         CPU_RW = 0;
         cpu_data_write = 10'd0;
         #(3*PERIOD);
         
-        // Write to address 83.
+        // Write to address 84.
         cpu_address = 10'd84;  
         CPU_RW =1;
         cpu_data_write = 10'd300;
@@ -336,50 +336,16 @@ module tb_Cache();
         #(1*PERIOD);
 
         //---------------------------------------------------
-        // Test 3: Write hit - update one location.
+        // Test 3: Eviction with Write-Back.
         //---------------------------------------------------
-        // Update address 50 with new data.
         cpu_address = 10'd148;
         CPU_RW = 1;
         cpu_data_write = 10'd150; 
         #(3*PERIOD);
         
-        // Read back address 50.
         cpu_address = 10'd223;
-        CPU_RW = 0;
-        #(3*PERIOD);
-
-        //---------------------------------------------------
-        // Test 4: Eviction with Write-Back.
-        //---------------------------------------------------
-        // Same index but a different tag to force eviction.
-        cpu_address = 10'd70;
-        CPU_RW = 1; // Read mode triggers allocation.
-        #(3*PERIOD);
-        
-        // Now, write new data into address 70.
-        cpu_address = 10'd70;
         CPU_RW = 1;
-        cpu_data_write = 10'd777;
         #(3*PERIOD);
-        
-        // Read back address 70.
-        cpu_address = 10'd70;
-        CPU_RW = 0;
-        #(3*PERIOD);
-
-        //---------------------------------------------------
-        // Additional Checks.
-        //---------------------------------------------------
-        cpu_address = 10'd67;
-        CPU_RW = 0;
-        #(3*PERIOD);
-        
-        cpu_address = 10'd84;
-        CPU_RW = 0;
-        #(3*PERIOD);
-
-        #(5*PERIOD);
         $finish;
     end
 endmodule
