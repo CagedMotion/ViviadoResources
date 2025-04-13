@@ -53,11 +53,7 @@ module Cache(
     // Determine a hit based on the current access.
     // (Note: In a miss, we will latch the values so that later allocation is done correctly.)
     reg hit;
-    //    valid[cpu_index] && (cache_tag[cpu_index] == cpu_tag);
-        
-    reg [9:0] temporary_address;
-    reg       temporary_CPU_RW;
-    reg [9:0] temporary_cpu_data;   
+//    valid[cpu_index] && (cache_tag[cpu_index] == cpu_tag);
         
     // Initializations.
     integer i;
@@ -71,43 +67,37 @@ module Cache(
             cache_tag[i] <= 5'b00000;
             cache_data[i] <= 20'd0;
         end
-        temporary_address <= 10'd0;
-        temporary_CPU_RW <= 1'b0;
-        temporary_cpu_data <= 10'd0;
     end
     
     // Combinational block: Next state and output signals.
-    always @(IDLE_COMPARE, WRITEBACK, ALLOCATION, state, cpu_address, hit, rst, mem_ready, cpu_index, CPU_RW, cpu_offset, cpu_tag) begin
+    always @(IDLE_COMPARE, WRITEBACK, ALLOCATION, state, cpu_address, hit, rst, mem_req, cpu_index, CPU_RW, cpu_offset, cpu_tag) begin
         // Default assignments.
         next_state    = IDLE_COMPARE;
         cache_ready   = 1'b1;
         mem_rw        = 0;
-        mem_req       = 1'b0;
         mem_addr      = 10'b0;
         mem_data_ram_store_bus = 20'b0;
         cpu_data_store_bus  = 10'b0;
         hit = 1'b0;
+        mem_req = 1'b0;
         
         case (state)
             IDLE_COMPARE: begin
                 cache_ready = 1'b1;
+                mem_req = 1'b0;
                 if (rst == 1'b0) begin
                     hit = valid[cpu_index] && (cache_tag[cpu_index] == cpu_tag);
                     if (hit == 1'b1) begin
                         // On hit, immediately serve the CPU.
-                        if (dirty[cpu_index] == 1'b0) begin
-                            next_state = IDLE_COMPARE;
-                            if (!CPU_RW) begin
-                                // Read: pick the appropriate half from the cache.
-                                cpu_data_store_bus = (cpu_offset) ? cache_data[cpu_index][19:10]
-                                                            : cache_data[cpu_index][9:0];
-                            end else begin
-                                // For a write hit, you might just echo back the CPU data.
-                                cpu_data_store_bus = (cpu_offset) ? cache_data[cpu_index][19:10]
-                                                            : cache_data[cpu_index][9:0];
-                            end
+                        next_state = IDLE_COMPARE;
+                        if (!CPU_RW) begin
+                            // Read: pick the appropriate half from the cache.
+                            cpu_data_store_bus = (cpu_offset) ? cache_data[cpu_index][19:10]
+                                                        : cache_data[cpu_index][9:0];
                         end else begin
-                            next_state = WRITEBACK;
+                            // For a write hit, you might just echo back the CPU data.
+                            cpu_data_store_bus = (cpu_offset) ? cache_data[cpu_index][19:10]
+                                                        : cache_data[cpu_index][9:0];
                         end
                     end else begin
                         // On miss, choose to either write-back (if dirty) or allocate.
@@ -126,21 +116,42 @@ module Cache(
                 cache_ready = 1'b0;
                 // Write-back: write one half (word) per cycle.
                 mem_rw  = 1'b1;  // Write operation.
-                mem_req = 1'b1;
                 // Note: using current cpu_index here assumes the miss address is valid.
-                mem_addr = {cache_tag[cpu_index], cpu_index, cpu_offset};
-                mem_data_ram_store_bus = cache_data[cpu_index];
-                next_state = ALLOCATION;
+                mem_req = 1'b1;
+                if (mem_ready==1'b1) begin 
+                    mem_addr = {cache_tag[cpu_index], cpu_index, cpu_offset};
+                    mem_data_ram_store_bus = cache_data[cpu_index];
+                    next_state = ALLOCATION;
+                end else begin
+                    mem_addr = {cache_tag[cpu_index], cpu_index, cpu_offset};
+                    mem_data_ram_store_bus = cache_data[cpu_index];
+                    next_state = WRITEBACK;
+                end
             end
             
             ALLOCATION: begin
                 cache_ready = 1'b0;
                 // Allocation: read one half (word) per cycle.
                 mem_rw  = 1'b0;  // Read operation.
-                mem_req = 1'b1;
-                mem_addr = {temporary_address[9:5], temporary_address[4:1], temporary_address[0]};
-                if (mem_ready)
+                // Use the latched tag and index (from when the miss occurred)
+                mem_addr = {cpu_tag, cpu_index, cpu_offset};
+                // Once both halves are read, finish allocation.
+                if (mem_ready) begin
                     next_state = IDLE_COMPARE;
+                end else begin
+                    next_state = ALLOCATION;
+                end
+                    
+                    
+                if (CPU_RW) begin
+                    mem_req = 1'b0;
+                end else begin
+                    if (hit == 1'b1) begin
+                        mem_req = 1'b0;
+                    end else begin
+                        mem_req = 1'b1;
+                    end
+                end
             end
             
             default: next_state = IDLE_COMPARE;
@@ -158,45 +169,42 @@ module Cache(
 
     // Latch the faulting address and CPU signals when a miss is detected.
     // This ensures the correct index, tag, offset and CPU_RW value are used later in allocation.
-    always @(posedge clk) begin
-        if (rst) begin
-            temporary_address <= 10'd0;
-            temporary_CPU_RW <= 1'b0;
-            temporary_cpu_data <= 10'd0;
-        end else if (~(valid[cpu_index] && (cache_tag[cpu_index] == cpu_tag))) begin
-                temporary_address <= cpu_address;
-                temporary_CPU_RW <= CPU_RW;
-                temporary_cpu_data <= cpu_data_write;
-        end
-    end
-    
     // Sequential block for capturing data from memory and updating the cache.
     always @(posedge clk) begin
-        // Allocation: capture memory data and update the cache using the latched info.
-        if (state == ALLOCATION && mem_ready) begin
-            // Use the latched address to determine the cache index and tag.
-            cache_tag[temporary_address[4:1]] <= temporary_address[9:5];
-            valid[temporary_address[4:1]]     <= 1'b1;
-            if (temporary_CPU_RW) begin
-                // For a write miss, only one half is updated from the latched CPU data.
-                if (temporary_address[0])
-                    cache_data[temporary_address[4:1]][19:10] <= temporary_cpu_data;
-                else
-                    cache_data[temporary_address[4:1]][9:0] <= temporary_cpu_data;
-                dirty[temporary_address[4:1]] <= 1'b1;
+        // During ALLOCATION, capture the incoming data from RAM.
+
+        // When allocation finishes (after both halves have been fetched), update the cache.
+        if (state == ALLOCATION) begin
+            // Use the latched index and tag rather than the current cpu_address fields.
+            cache_tag[cpu_index] <= cpu_tag;
+            valid[cpu_index]     <= 1'b1;
+            if (CPU_RW) begin
+                // Write miss: update the appropriate half using the latched CPU data.
+                if (cpu_offset) begin
+                    // CPU intended to write to the upper half.
+                    cache_data[cpu_index][19:10] <= cpu_data_bus; 
+                end else begin
+                    // CPU intended to write to the lower half.
+                    cache_data[cpu_index][9:0] <= cpu_data_bus;
+                end
+                dirty[cpu_index] <= 1'b1;
             end else begin
-                // For a read miss, the full block is fetched from memory.
-                cache_data[temporary_address[4:1]] <= mem_data_ram_write;
-                dirty[temporary_address[4:1]] <= 1'b0;
-            end
+                // Read miss: simply store both halves from memory.
+                if (mem_ready==1'b1) begin
+                    cache_data[cpu_index] <= mem_data_ram_write; 
+                    dirty[cpu_index] <= 1'b0;
+                end
+                
+         end
+          
         end
 
-        // Write hit: update the cache directly with the CPU data.
-        if (state == IDLE_COMPARE && (valid[cpu_index] && (cache_tag[cpu_index] == cpu_tag)) && CPU_RW) begin
+        // For write hits (when the block is already in the cache), update the cache directly.
+        if (state == IDLE_COMPARE && hit && CPU_RW) begin
             if (cpu_offset)
                 cache_data[cpu_index][19:10] <= cpu_data_write;
             else
-                cache_data[cpu_index][9:0] <= cpu_data_write;
+                cache_data[cpu_index][9:0]  <= cpu_data_write;
             dirty[cpu_index] <= 1'b1;
         end
     end
@@ -212,6 +220,8 @@ module tb_Cache();
     reg [9:0] cpu_address;
     wire cache_ready;
     
+
+
     // Memory interface signals between Cache and RAM.
     wire [9:0] mem_addr;
     wire mem_rw;
@@ -231,11 +241,11 @@ module tb_Cache();
         .cpu_data_bus(cpu_data_bus),
         .cpu_address(cpu_address),
         .mem_data_ram_bus(mem_data_ram_bus),
-        .mem_ready(mem_ready),
+        .mem_req(mem_req),
         .cache_ready(cache_ready),
         .mem_addr(mem_addr),
         .mem_rw(mem_rw),
-        .mem_req(mem_req)
+        .mem_ready(mem_ready)
     );
 
     // Instantiate the RAM module.
@@ -245,9 +255,9 @@ module tb_Cache();
         .data(mem_data_ram_bus),
         .clk(clk),
         .we(ram_we),
-        .mem_ready(mem_ready),
         .address(mem_addr),
-        .mem_req(mem_req)
+        .mem_req(mem_req),
+        .mem_ready(mem_ready)
     );
         
     assign cpu_data_bus = (CPU_RW == 1'b1) ?
@@ -261,18 +271,6 @@ module tb_Cache();
     
     assign cpu_data_read = cpu_data_bus;
     
-    task wait_for_cache_ready;
-    begin
-         while (cache_ready == 1'b0)
-              @(posedge clk);
-         // Once cache_ready first goes high, wait one full cycle.
-         @(posedge clk);
-         // Confirm that cache_ready remains high; if not, keep waiting.
-         while (cache_ready == 1'b0)
-              @(posedge clk);
-         end
-    endtask
-
     // Test sequence.
     initial begin
         // Initialization.
@@ -280,132 +278,74 @@ module tb_Cache();
         CPU_RW = 0;
         cpu_data_write = 10'd0;
         cpu_address = 10'd0;
-        #(PERIOD);
+        #(2*PERIOD);
+
+        //---------------------------------------------------
+        // Test 1: Write/read to 4 distinct cache locations.
+        //---------------------------------------------------
+        // We choose addresses that map to different indices.
         
-        // Release reset.
+        // read to address 50 (binary example).
         rst = 0;
-        #(PERIOD);
-        
-        //---------------------------------------------------
-        // Test 1: Write to several distinct cache locations.
-        //---------------------------------------------------
-        // Write to address 50.
-        cpu_address = 10'b0000110010;  
-        CPU_RW = 0; // Read mode (forces a miss that loads from RAM).
-        cpu_data_write = 10'd0;
-        @(posedge clk);
-        wait_for_cache_ready;
-        
-        // Write to address 67.
-        cpu_address = 10'b0001000011;  
+        cpu_address = 10'd50;  
         CPU_RW = 0;
         cpu_data_write = 10'd0;
-        @(posedge clk);
-        wait_for_cache_ready;
+         #(3*PERIOD);
+        
+        // read to address 67.
+        cpu_address = 10'd67;  
+        CPU_RW = 0;
+        cpu_data_write = 10'd0;
+        #(3*PERIOD);
         
         // Write to address 84.
-        cpu_address = 10'b0001010100;  
-        CPU_RW = 1;
+        cpu_address = 10'd84;  
+        CPU_RW =1;
         cpu_data_write = 10'd300;
-        @(posedge clk);
-        wait_for_cache_ready;
+        #(2*PERIOD);
         
         // Write to address 95.
-        // Address 95 (binary 0001011111) maps to index 15.
-        cpu_address = 10'b0001011111;  
+        cpu_address = 10'd95;  
         CPU_RW = 1;
         cpu_data_write = 10'd400;
-        @(posedge clk);
-        wait_for_cache_ready;
+        #(2*PERIOD);
         
         // Write to address 150.
-        // This address maps to index 11.
-        cpu_address = 10'b0010010110;
+        cpu_address = 10'd150;
         CPU_RW = 1;
         cpu_data_write = 10'd100;
-        @(posedge clk);
-        wait_for_cache_ready;
-        
+        #(2*PERIOD);
+
         //---------------------------------------------------
         // Test 2: Read back from those locations (read hits).
         //---------------------------------------------------
         cpu_address = 10'd50;  
         CPU_RW = 0; // Read mode.
-        @(posedge clk);
-        wait_for_cache_ready;
+        #(1*PERIOD);
         
         cpu_address = 10'd67;  
         CPU_RW = 0;
-        @(posedge clk);
-        wait_for_cache_ready;
+        #(1*PERIOD);
         
         cpu_address = 10'd84;  
         CPU_RW = 0;
-        @(posedge clk);
-        wait_for_cache_ready;
+        #(1*PERIOD);
         
         cpu_address = 10'd95;  
         CPU_RW = 0;
-        @(posedge clk);
-        wait_for_cache_ready;
-        
-        cpu_address = 10'd150;
-        CPU_RW = 0;
-        @(posedge clk);
-        wait_for_cache_ready;
-        
+        #(1*PERIOD);
+
         //---------------------------------------------------
-        // Test 3: Write hit - update one location.
+        // Test 3: Eviction with Write-Back.
         //---------------------------------------------------
-        // Update address 84 with new data.
-        cpu_address = 10'd84;
+        cpu_address = 10'd148;
         CPU_RW = 1;
-        cpu_data_write = 10'd150;
-        @(posedge clk);
-        wait_for_cache_ready;
-        
-        cpu_address = 10'd84;
-        CPU_RW = 0;
-        @(posedge clk);
-        wait_for_cache_ready;
-        
-        //---------------------------------------------------
-        // Test 4: Eviction with Write-Back.
-        //---------------------------------------------------
-        // Use an address that forces eviction (maps to index 15).
-        cpu_address = 10'd223;
-        CPU_RW = 0; // Read mode triggers allocation.
-        @(posedge clk);
-        wait_for_cache_ready;
+        cpu_data_write = 10'd150; 
+        #(3*PERIOD);
         
         cpu_address = 10'd223;
         CPU_RW = 1;
-        cpu_data_write = 10'd500;
-        @(posedge clk);
-        wait_for_cache_ready;
-        
-        cpu_address = 10'd223;
-        CPU_RW = 0;
-        @(posedge clk);
-        wait_for_cache_ready;
-        
-        //---------------------------------------------------
-        // Additional Checks.
-        //---------------------------------------------------
-        cpu_address = 10'd67;
-        CPU_RW = 0;
-        @(posedge clk);
-        wait_for_cache_ready;
-        
-        cpu_address = 10'd84;
-        CPU_RW = 0;
-        @(posedge clk);
-        wait_for_cache_ready;
-        
-        #(PERIOD);
+        #(3*PERIOD);
         $finish;
     end
 endmodule
-
-
-
