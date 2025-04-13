@@ -65,6 +65,7 @@ module task1rom(
         memory[34] <= 10'b0000000000; // add
         memory[35] <= 10'b0000000000; // add
         memory[36] <= 10'b0111111011; // addi s1, s1, -1, 0
+        memory[37] <= 10'b0001111100;
         memory[38] <= 10'b0110101101; // addi t3, t3, 1, 1
         memory[39] <= 10'b1000001001; // jump loop2
     
