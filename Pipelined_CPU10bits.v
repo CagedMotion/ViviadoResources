@@ -36,10 +36,10 @@ module pipeline_CPU10bits(
     );
 
      //Instruction Memory (ROM)
-//    task1rom ROM_inst (
-//        .address(pc),
-//        .read_data(instr)
-//    );
+    task1rom ROM_inst (
+        .address(pc),
+        .read_data(instr)
+    );
 
  //    Instruction Memory (ROM)
 //    task2rom ROM_inst (
@@ -47,10 +47,10 @@ module pipeline_CPU10bits(
 //        .read_data(instr)
 //    );
     
-    task3rom ROM_inst (
-        .address(pc),
-        .read_data(instr)
-    );
+//    task3rom ROM_inst (
+//        .address(pc),
+//        .read_data(instr)
+//    );
 
     // Decode the instruction fields according to ISA design.
     wire [2:0] opcode   = instr[9:7];
@@ -270,13 +270,13 @@ module pipeline_CPU10bits(
     wire [9:0] mem_addr  = alu_result;
     wire [9:0] mem_wdata = (em_mem_we) ? em_store_data : 10'd0;
 
-//    ramtask1 RAM_inst (
-//        .clk(clk),
-//        .we(em_mem_we),
-//        .address(mem_addr),
-//        .wdata(mem_wdata),
-//        .rdata(mem_rdata)
-//    );
+    ramtask1 RAM_inst (
+        .clk(clk),
+        .we(em_mem_we),
+        .address(mem_addr),
+        .wdata(mem_wdata),
+        .rdata(mem_rdata)
+    );
 
 //    ramtask2 RAM_inst (
 //        .clk(clk),
@@ -286,13 +286,13 @@ module pipeline_CPU10bits(
 //        .rdata(mem_rdata)
 //    );
     
-    ramtask3 RAM_inst (
-        .clk(clk),
-        .we(em_mem_we),
-        .address(mem_addr),
-        .wdata(mem_wdata),
-        .rdata(mem_rdata)
-    );
+//    ramtask3 RAM_inst (
+//        .clk(clk),
+//        .we(em_mem_we),
+//        .address(mem_addr),
+//        .wdata(mem_wdata),
+//        .rdata(mem_rdata)
+//    );
 
     //----------------------------------------------------------
     // EM->WB Pipeline Register
@@ -367,48 +367,32 @@ endmodule
 module tb_pipeline_cpu10bits;
     reg clk;
     reg rst;
-    //wire halted;
-    
-    // Instantiate the CPU10bits top module.
+    wire cpu_halted;  // Connect to the halt signal from your design
+
+    // Instantiate the CPU10bits top module and connect the halt output.
     pipeline_CPU10bits dut (
         .clk(clk),
         .rst(rst),
-        .cpu_halted()  // Connect to a monitor if desired.
+        .cpu_halted(cpu_halted)  // Monitor this signal
     );
     
     parameter PERIOD = 10;
+    
+    // Clock generation: toggles clock indefinitely.
     initial clk = 1'b1;
     always #(PERIOD/2) clk = ~clk;
     
+    // Reset stimulus.
     initial begin
-        //halted = 1;
         rst = 1;
         #PERIOD;
         rst = 0;
-        //halted = 0;
-        
-        // Optionally, drive any test stimulus here.
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-//        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-//        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        
+    end
+
+    // Monitor the halt signal and finish simulation when asserted.
+    initial begin
+        wait (cpu_halted == 1);
+        $display("Halt signal detected. Finishing simulation.");
         $finish;
     end
 endmodule
