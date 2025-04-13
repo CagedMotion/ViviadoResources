@@ -70,10 +70,10 @@ module Cache(
     end
     
     // Combinational block: Next state and output signals.
-    always @(IDLE_COMPARE, WRITEBACK, ALLOCATION, state, cpu_address, hit, rst, mem_req, cpu_index, CPU_RW, cpu_offset, cpu_tag) begin
+    always @(IDLE_COMPARE, WRITEBACK, ALLOCATION, state, cpu_address, hit, rst, mem_req, mem_ready, cpu_index, CPU_RW, cpu_offset, cpu_tag) begin
         // Default assignments.
         next_state    = IDLE_COMPARE;
-        cache_ready   = 1'b1;
+        cache_ready   = 1'b0;
         mem_rw        = 0;
         mem_addr      = 10'b0;
         mem_data_ram_store_bus = 20'b0;
@@ -83,7 +83,11 @@ module Cache(
         
         case (state)
             IDLE_COMPARE: begin
-                cache_ready = 1'b1;
+                if (mem_ready == 1'b1) begin
+                    cache_ready = 1'b1;
+                end else begin
+                    cache_ready = 1'b0;
+                end
                 mem_req = 1'b0;
                 if (rst == 1'b0) begin
                     hit = valid[cpu_index] && (cache_tag[cpu_index] == cpu_tag);
@@ -113,7 +117,11 @@ module Cache(
             end
             
             WRITEBACK: begin
-                cache_ready = 1'b0;
+                if (mem_ready == 1'b1) begin
+                    cache_ready = 1'b1;
+                end else begin
+                    cache_ready = 1'b0;
+                end
                 // Write-back: write one half (word) per cycle.
                 mem_rw  = 1'b1;  // Write operation.
                 // Note: using current cpu_index here assumes the miss address is valid.
@@ -130,21 +138,27 @@ module Cache(
             end
             
             ALLOCATION: begin
-                cache_ready = 1'b0;
                 // Allocation: read one half (word) per cycle.
                 mem_rw  = 1'b0;  // Read operation.
                 // Use the latched tag and index (from when the miss occurred)
                 mem_addr = {cpu_tag, cpu_index, cpu_offset};
                 // Once both halves are read, finish allocation.
+                next_state = IDLE_COMPARE;
                 if (mem_ready) begin
-                    next_state = IDLE_COMPARE;
+                    cache_ready = 1'b1;
+//                    next_state = IDLE_COMPARE;
                 end else begin
-                    next_state = ALLOCATION;
+                    cache_ready = 1'b0;
+//                    next_state = ALLOCATION;
                 end
                     
                     
                 if (CPU_RW) begin
-                    mem_req = 1'b0;
+                    if (hit == 1'b1) begin
+                        mem_req = 1'b0;
+                    end else begin
+                        mem_req = 1'b1;
+                    end
                 end else begin
                     if (hit == 1'b1) begin
                         mem_req = 1'b0;
@@ -180,6 +194,10 @@ module Cache(
             valid[cpu_index]     <= 1'b1;
             if (CPU_RW) begin
                 // Write miss: update the appropriate half using the latched CPU data.
+                if (mem_ready==1'b1) begin
+                    cache_data[cpu_index] <= mem_data_ram_write; 
+                    dirty[cpu_index] <= 1'b0;
+                end
                 if (cpu_offset) begin
                     // CPU intended to write to the upper half.
                     cache_data[cpu_index][19:10] <= cpu_data_bus; 
@@ -193,10 +211,8 @@ module Cache(
                 if (mem_ready==1'b1) begin
                     cache_data[cpu_index] <= mem_data_ram_write; 
                     dirty[cpu_index] <= 1'b0;
-                end
-                
-         end
-          
+                end   
+            end
         end
 
         // For write hits (when the block is already in the cache), update the cache directly.
@@ -300,21 +316,26 @@ module tb_Cache();
         
         // Write to address 84.
         cpu_address = 10'd84;  
-        CPU_RW =1;
+        CPU_RW = 1;
         cpu_data_write = 10'd300;
-        #(2*PERIOD);
+        #(3*PERIOD);
         
         // Write to address 95.
         cpu_address = 10'd95;  
         CPU_RW = 1;
         cpu_data_write = 10'd400;
-        #(2*PERIOD);
+        #(3*PERIOD);
+        
+        cpu_address = 10'd67;  
+        CPU_RW = 1;
+        cpu_data_write = 10'd250;
+        #(1*PERIOD);
         
         // Write to address 150.
         cpu_address = 10'd150;
         CPU_RW = 1;
         cpu_data_write = 10'd100;
-        #(2*PERIOD);
+        #(3*PERIOD);
 
         //---------------------------------------------------
         // Test 2: Read back from those locations (read hits).
@@ -338,14 +359,16 @@ module tb_Cache();
         //---------------------------------------------------
         // Test 3: Eviction with Write-Back.
         //---------------------------------------------------
+        cpu_address = 10'd223;
+        CPU_RW = 0;
+        #(3*PERIOD);
+        
         cpu_address = 10'd148;
         CPU_RW = 1;
         cpu_data_write = 10'd150; 
         #(3*PERIOD);
         
-        cpu_address = 10'd223;
-        CPU_RW = 1;
-        #(3*PERIOD);
+
         $finish;
     end
 endmodule
