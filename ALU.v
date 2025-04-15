@@ -10,7 +10,7 @@ module ALU(
 
     // Internal wires for addition and subtraction
     wire [9:0] add_result;
-    wire       add_cout;
+    //wire       add_cout = 1'b0;
     
     // For subtraction, compute A - B = A + (~B) + 1
     wire [9:0] B_inverted;
@@ -22,7 +22,9 @@ module ALU(
     endgenerate
     
     wire [9:0] sub_result;
-    wire       sub_cout;
+    //wire       sub_cout = 1'b0;
+    
+    //wire unused_add_cout, unused_sub_cout;
     
     // 10-bit addition for ADD (A + B) with carry in = 0
     ripple_carry_adder_10 adder_inst (
@@ -30,7 +32,7 @@ module ALU(
         .B   (B),
         .cin (1'b0),
         .sum (add_result),
-        .cout(add_cout)
+        .cout()
     );
     
     // 10-bit subtraction for SUB (A - B) implemented as A + (~B) + 1
@@ -39,14 +41,10 @@ module ALU(
         .B   (B_inverted),
         .cin (1'b1),
         .sum (sub_result),
-        .cout(sub_cout)
+        .cout()
     );
     
-//    wire   unused_add_cout, unused_sub_cout;
-//    assign unused_add_cout = add_cout;
-//    assign unused_sub_cout = sub_cout;
-    assign add_cout = 0;
-    assign sub_cout = 0;
+
     
     // NAND Operation (bitwise NAND of A and B)
     wire [9:0] nand_result;
@@ -55,9 +53,6 @@ module ALU(
             nand u_nand(nand_result[j], A[j], B[j]);
         end
     endgenerate
-    
-    
-    
     
     // Shift Operations
     wire [9:0] slr_result;  // Shift Right Logical: A >> 1

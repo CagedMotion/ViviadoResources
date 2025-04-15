@@ -318,6 +318,8 @@ module cache_pipeline_CPU10bits(
         .alu_result_out(wb_alu_result),
         .ram_rdata_in(cache_cpu_data),    // Use data coming from the Cache
         .ram_rdata_out(wb_mem_rdata),
+        .ram_stdata_in(em_store_data),
+        .ram_stdata_out(),
         .gp_reg_wb_in(em_reg_we),
         .gp_reg_wb_out(wb_reg_we),
         .mem_re_in(em_mem_re),
@@ -378,29 +380,32 @@ module cache_pipeline_CPU10bits(
 endmodule
 
 module tb_cache_pipeline_cpu10bits;
-    reg clk;
-    reg rst;
-    
+    reg        clk;
+    reg        rst;
+    wire       halted;
+
     // Instantiate the CPU10bits top module.
     cache_pipeline_CPU10bits dut (
-        .clk(clk),
-        .rst(rst),
-        .cpu_halted()  // Connect to a monitor if desired.
+        .clk       (clk),
+        .rst       (rst),
+        .cpu_halted(halted)   // now connected to our TB
     );
     
     parameter PERIOD = 10;
+    
+    // clock generator
     initial clk = 1'b1;
     always #(PERIOD/2) clk = ~clk;
     
     initial begin
+        // reset pulse
         rst = 1;
         #PERIOD;
         rst = 0;
         
-        // Optionally, drive any test stimulus here.
-        #PERIOD; #PERIOD; #PERIOD; #PERIOD; #PERIOD; #PERIOD; #PERIOD; #PERIOD; #PERIOD;
-        // ... (additional stimulus)
-        
+        // now wait until the CPU asserts halt
+        wait (halted == 1);
+        $display(">> CPU halted at time %0t ns", $time);
         $finish;
     end
 endmodule
