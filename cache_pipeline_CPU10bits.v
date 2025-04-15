@@ -38,12 +38,21 @@ module cache_pipeline_CPU10bits(
         .jump_target(jump_target),
         .pc_out(pc)
     );
-
     // Instruction Memory (ROM)
+//    task1rom ROM_inst (
+//        .address(pc),
+//        .read_data(instr)
+//    );
+
     task2rom ROM_inst (
         .address(pc),
         .read_data(instr)
     );
+    
+//    task3rom ROM_inst (
+//        .address(pc),
+//        .read_data(instr)
+//    );
     
     // Decode the instruction fields according to ISA design.
     wire [2:0] opcode   = instr[9:7];
@@ -275,14 +284,23 @@ module cache_pipeline_CPU10bits(
     // Instead of connecting the ALU output directly to a RAM instance,
     // insert the Cache here between the EM->WB pipeline register and the RAM.
     //-------------------------------------------------------------------------
-    // Signals on the CPU side of the Cache (10-bit data bus).
-    wire [9:0] cache_cpu_data;
     // Signals on the RAM side of the Cache (20-bit bidirectional bus).
     wire [19:0] ram_data_bus;
     wire [9:0]  cache_mem_addr;
     wire        cache_mem_rw;
     wire        cache_mem_req;
     wire        mem_ready_from_RAM;
+    
+    //----------------------------------------------------------
+    // Bidirectional CPU Data Bus with Tri-State Control
+    //----------------------------------------------------------
+    // Declare the CPU data bus as an inout signal.
+    wire [9:0] cpu_data_bus;
+    
+    // Tri-State Buffer:
+    //   When em_mem_we is high (store operation), drive the bus with em_store_data.
+    //   When em_mem_we is low (load operation), the bus is high impedance and the cache drives the bus.
+    assign cpu_data_bus = (em_mem_we) ? em_store_data : 10'bz;
     
     Cache Cache_inst (
          .clk(clk),
@@ -291,14 +309,24 @@ module cache_pipeline_CPU10bits(
          .cpu_address(alu_result),   // Effective address from the ALU
          .mem_ready(mem_ready_from_RAM),
          .mem_data_ram_bus(ram_data_bus),
-         .cpu_data_bus(cache_cpu_data),  // Data output for load operations
+         .cpu_data_bus(cpu_data_bus),  // Data output for load operations
          .cache_ready(cache_ready),            // (Optional: can be used for stall control)
          .mem_addr(cache_mem_addr),
          .mem_rw(cache_mem_rw),
          .mem_req(cache_mem_req)
     );
+    
+    //ram instantiation.
+//        ramtask1_for_cache RAM_inst (
+//        .clk(clk),
+//        .we(cache_mem_rw),       // Write enable as driven by the Cache.
+//        .address(cache_mem_addr),
+//        .data(ram_data_bus),
+//        .mem_ready(mem_ready_from_RAM),
+//        .mem_req(cache_mem_req)
+//    );
 
-    ramtask2 RAM_inst (
+    ramtask2_for_cache RAM_inst (
         .clk(clk),
         .we(cache_mem_rw),       // Write enable as driven by the Cache.
         .address(cache_mem_addr),
@@ -306,6 +334,15 @@ module cache_pipeline_CPU10bits(
         .mem_ready(mem_ready_from_RAM),
         .mem_req(cache_mem_req)
     );
+    
+//        ramtask3_for_cache RAM_inst (
+//        .clk(clk),
+//        .we(cache_mem_rw),       // Write enable as driven by the Cache.
+//        .address(cache_mem_addr),
+//        .data(ram_data_bus),
+//        .mem_ready(mem_ready_from_RAM),
+//        .mem_req(cache_mem_req)
+//    );
     
     //----------------------------------------------------------
     // EM->WB Pipeline Register
@@ -316,10 +353,8 @@ module cache_pipeline_CPU10bits(
         .en(!stall_global), 
         .alu_result_in(alu_result), 
         .alu_result_out(wb_alu_result),
-        .ram_rdata_in(cache_cpu_data),    // Use data coming from the Cache
+        .ram_rdata_in(cpu_data_bus),    // Use data coming from the Cache
         .ram_rdata_out(wb_mem_rdata),
-        .ram_stdata_in(em_store_data),
-        .ram_stdata_out(),
         .gp_reg_wb_in(em_reg_we),
         .gp_reg_wb_out(wb_reg_we),
         .mem_re_in(em_mem_re),

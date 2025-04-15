@@ -29,6 +29,7 @@ module pipeline_CPU10bits(
         .reset(rst),
         .halted(halted_reg),
         .branch(branch_sig),
+        .stalled(1'b0),
         .jump(jump_sig),
         .branch_addr(branch_target),
         .jump_target(jump_target),
@@ -36,16 +37,16 @@ module pipeline_CPU10bits(
     );
 
      //Instruction Memory (ROM)
-    task1rom ROM_inst (
-        .address(pc),
-        .read_data(instr)
-    );
-
- //    Instruction Memory (ROM)
-//    task2rom ROM_inst (
+//    task1rom ROM_inst (
 //        .address(pc),
 //        .read_data(instr)
 //    );
+
+ //    Instruction Memory (ROM)
+    task2rom ROM_inst (
+        .address(pc),
+        .read_data(instr)
+    );
     
 //    task3rom ROM_inst (
 //        .address(pc),
@@ -207,6 +208,7 @@ module pipeline_CPU10bits(
     fd_EX_Mem_reg FD_EM_reg (
         .clk(clk),
         .reset(rst),
+        .en(1'b1),
         .gp_rdata1_address_in(fd_srcA_addr),
         .gp_rdata1_address_out(gp_rdata1_address_out),
         .gp_rdata2_address_in(alt_rdata2),
@@ -270,21 +272,21 @@ module pipeline_CPU10bits(
     wire [9:0] mem_addr  = alu_result;
     wire [9:0] mem_wdata = (em_mem_we) ? em_store_data : 10'd0;
 
-    ramtask1 RAM_inst (
-        .clk(clk),
-        .we(em_mem_we),
-        .address(mem_addr),
-        .wdata(mem_wdata),
-        .rdata(mem_rdata)
-    );
-
-//    ramtask2 RAM_inst (
+//    ramtask1 RAM_inst (
 //        .clk(clk),
 //        .we(em_mem_we),
 //        .address(mem_addr),
 //        .wdata(mem_wdata),
 //        .rdata(mem_rdata)
 //    );
+
+    ramtask2 RAM_inst (
+        .clk(clk),
+        .we(em_mem_we),
+        .address(mem_addr),
+        .wdata(mem_wdata),
+        .rdata(mem_rdata)
+    );
     
 //    ramtask3 RAM_inst (
 //        .clk(clk),
@@ -299,7 +301,8 @@ module pipeline_CPU10bits(
     //----------------------------------------------------------
     Exe_Mem_WB_reg EM_WB_reg (
         .clk(clk), 
-        .reset(rst), 
+        .reset(rst),
+        .en(1'b1),
         .alu_result_in(alu_result), 
         .alu_result_out(wb_alu_result),
         .ram_rdata_in(mem_rdata), 

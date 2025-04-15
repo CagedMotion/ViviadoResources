@@ -1,0 +1,119 @@
+`timescale 1ns / 1ps
+
+module ramtask1(
+    output wire [9:0] rdata,   // 10-bit data output
+    input  wire       clk,     // Clock signal
+    input  wire       we,      // Write enable
+    input  wire [9:0] address, // 10-bit address input
+    input  wire [9:0] wdata    // 10-bit write data
+);
+
+    // Memory array: 1024 entries of 10 bits each.
+    reg [9:0] ram[1023:0];
+    
+    initial begin
+        ram[0] = 10'b0000000101; //0000010100;
+        ram[1] = 10'b0000001010;
+        ram[2] = 10'b0000000100;
+        ram[10] = 10'b0000010100;  //20
+        ram[11] = 10'b0000010011;  //19
+        ram[12] = 10'b0000010010;  //18
+        ram[13] = 10'b0001010010;  //82
+        ram[14] = 10'b0000000110;  //6
+//        ram[0] = 10'b0000000100;
+//        ram[1] = 10'b1001000000; 
+//        //ram[2] = 10'b1000010000;//ARRAY 1 ADDRESS
+//        ram[2] = 10'b0000000000;
+//        ram[3] = 10'b0001010111;
+//        ram[4] = 10'b0001100001;
+//        ram[5] = 10'b0001100110;
+//        ram[6] = 10'b0001100110;
+//        ram[7] = 10'b0001101100;
+//        ram[8] = 10'b0001100101;
+//        ram[9] = 10'b0001110011;
+//        ram[10] = 10'b0001000001;
+//        ram[11] = 10'b0001101110;
+//        ram[12] = 10'b0001100100;
+//        ram[13] = 10'b0001010000;
+//        ram[14] = 10'b0001100001;
+//        ram[15] = 10'b0001101110;
+//        ram[16] = 10'b0001100011;
+//        ram[17] = 10'b0001100001;
+//        ram[18] = 10'b0001101011;
+//        ram[19] = 10'b0001100101;
+//        ram[20] = 10'b0001110011;
+//        ram[21] = 10'b0000000000;
+//        ram[22] = 10'b1001000000;
+     end
+
+    // Asynchronous read: rdata immediately reflects the memory content at "address"
+    assign rdata = ram[address];
+
+    // Synchronous write: On the rising edge, if "we" is asserted,
+    // write "wdata" into the memory at the given "address".
+    always @(posedge clk) begin
+        if (we)
+            ram[address] <= wdata;
+    end
+
+endmodule
+
+module tb_ram();
+    wire [9:0] rdata;
+    reg clk, we;
+    reg [9:0] address;
+    reg [9:0] wdata;
+    
+    ram dut(.rdata(rdata), .clk(clk), .we(we), .address(address), .wdata(wdata));
+    
+    parameter PERIOD = 10;
+    initial clk = 1'b0;
+    always #(PERIOD/2) clk = ~clk;
+    
+    initial begin
+        // Basic write operations
+        wdata = 10'h01;
+        address = 10'd0;
+        we = 1'b1;
+        #PERIOD;
+
+        wdata = 10'h02;
+        address = 10'd75;     
+        #PERIOD;
+
+        wdata = 10'h03;
+        address = 10'd60;     
+        #PERIOD;
+
+        // Read operations for addresses 0, 1, 2
+        address = 10'd0;
+        we = 1'b0;
+        #PERIOD;
+
+        address = 10'd1;
+        #PERIOD;
+
+        address = 10'd2;
+        #PERIOD;
+
+        // Additional write/read cycle
+        wdata = 10'h04;
+        address = 10'd25;
+        we = 1'b1;
+        #PERIOD;
+
+        address = 10'd50;
+        we = 1'b0;
+        #PERIOD;
+
+        // New test: write and read at the end address (1023)
+        wdata = 10'h3FF; // Maximum 10-bit value
+        address = 10'd1023;
+        we = 1'b1;
+        #PERIOD;
+
+        we = 1'b0;
+        address = 10'd1023;
+        #PERIOD;
+    end
+endmodule

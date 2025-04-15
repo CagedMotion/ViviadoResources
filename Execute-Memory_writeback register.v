@@ -9,9 +9,6 @@ module Exe_Mem_WB_reg(
     // Latch the memory read data (10 bits)
     input  wire [9:0] ram_rdata_in,
     output wire [9:0] ram_rdata_out,
-    // latch the memory store data(10 bits)
-    input  wire [9:0] ram_stdata_in,
-    output wire [9:0] ram_stdata_out,
     // Latch the register-file write enable (1 bit)
     input  wire       gp_reg_wb_in,
     output wire       gp_reg_wb_out,
@@ -31,9 +28,6 @@ module Exe_Mem_WB_reg(
     register_10bit REG2(.clk(~clk), .reset(reset), .en(en), .din(ram_rdata_in), .dout(ram_rdata_out)
     );
     
-    // Latch the memory store data.
-    register_10bit REG10(.clk(~clk), .reset(reset), .en(en), .din(ram_stdata_in), .dout(ram_stdata_out)
-    );
     // Latch the register-file write enable.
     register_1bit REG3(.clk(~clk), .reset(reset), .en(en), .din(gp_reg_wb_in), .dout(gp_reg_wb_out));
     

@@ -1,6 +1,6 @@
 `timescale 1ns / 1ps
 
-module ramtask2(
+module ramtask2_for_cache(
     inout wire [19:0] data,   // 10-bit data output
     input  wire       clk,     // Clock signal
     input  wire       we,      // Write enable
@@ -11,6 +11,12 @@ module ramtask2(
 
     // Memory array: 1024 entries of 10 bits each.
     reg [9:0] ram[1023:0];
+    
+    reg [1:0] state, next_state;
+        
+    parameter IDLE    = 2'b00; // Memory is idle and ready. mem_ready is high.
+    parameter WAIT    = 2'b01; // First delay cycle: mem_ready is low.
+    parameter EXECUTE = 2'b10; // Second cycle: perform the operation, then set mem_ready high.
     
     initial begin
         state = IDLE;
@@ -53,10 +59,6 @@ module ramtask2(
         ram[223] = 10'b0000001000;
      end
 
-    parameter IDLE    = 2'b00; // Memory is idle and ready. mem_ready is high.
-    parameter WAIT    = 2'b01; // First delay cycle: mem_ready is low.
-    parameter EXECUTE = 2'b10; // Second cycle: perform the operation, then set mem_ready high.
-    reg [1:0] state, next_state;
     
     reg [19:0] read_data;
     

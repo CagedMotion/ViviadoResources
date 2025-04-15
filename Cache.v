@@ -37,6 +37,7 @@ module Cache(
     reg [9:0] cpu_data_store_bus;
     wire [19:0] mem_data_ram_write, mem_data_ram_read;
     wire [9:0] cpu_data_write, cpu_data_read;
+    
     assign mem_data_ram_bus = (mem_rw == 1'b1) ?
         mem_data_ram_read :
         20'bzzzzzzzzzz_zzzzzzzzzz;
