@@ -1,19 +1,16 @@
 module hazard_unit(
-    input  wire clk,
-    input  wire rst,
-    input  wire cache_ready,  // from the Cache module
-    // You might also include other hazard signals such as from load hazards,
-    // branch hazards etc.
-    output reg  stall        // Global stall signal for the pipeline
+    input  wire cache_ready,       // 1 ⇒ cache is ready
+    input  wire load_use_hazard,   // 1 ⇒ must stall for a load-use data hazard
+    input  wire branch_hazard,     // 1 ⇒ must stall for branch resolution (optional)
+    output wire stall              // 1 ⇒ pipeline must stall
 );
 
-    // Combinational logic to generate stall signal.
-    always @(cache_ready) begin
-        // If the cache is not ready, assert stall.
-        if (!cache_ready)
-            stall = 1'b1;
-        else
-            stall = 1'b0;
-    end
+    // stall if ANY hazard is present or the cache is not ready
+    assign stall = (~cache_ready)
+                 | load_use_hazard
+                 | branch_hazard
+                 // | other_hazard_flag
+                 ;
 
 endmodule
+

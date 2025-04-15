@@ -4,6 +4,7 @@ module fetch_unit(
     input  wire       clk,
     input  wire       reset,
     input  wire       halted,
+    input  wire       stalled,      // ← new: high ⇒ freeze PC
     input  wire       branch,       // Branch signal: when true, use branch_addr
     input  wire       jump,         // Jump signal: when true, use jump_target
     input  wire [9:0] branch_addr,  // Branch target (PC+1 + immediate)
@@ -14,20 +15,22 @@ module fetch_unit(
     wire [9:0] pc_plus_one;
     assign pc_plus_one = pc_out + 10'd1;
     
-    // Next PC selection:
-    // If halted is asserted, hold the current PC.
-    // Otherwise, follow jump > branch > increment.
+     // Select next PC:
+    // 1) if halted, stay at pc_out
+    // 2) else if jump, go to jump_target
+    // 3) else if branch, go to branch_addr
+    // 4) else increment
     wire [9:0] next_pc;
     assign next_pc = (halted == 1'b1) ? pc_out :
                      (jump   ? jump_target : (branch ? branch_addr : pc_plus_one));
     
     // Instantiate the 10-bit register that holds the PC.
     register_10bit pc_reg (
-        .clk(clk),
+        .clk  (clk),
         .reset(reset),
-        .en(1'b1),  // Always enabled
-        .din(next_pc),
-        .dout(pc_out)
+        .en   (!stalled),    // ← gate here
+        .din  (next_pc),
+        .dout (pc_out)
     );
     
 endmodule

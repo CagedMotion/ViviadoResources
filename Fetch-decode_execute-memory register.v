@@ -2,6 +2,7 @@
 
 module fd_EX_Mem_reg(
     input  wire clk, reset,
+    input  wire en,
     
     // Address fields for register file operands (already 3-bit)
     input  wire [2:0] gp_rdata1_address_in, gp_rdata2_address_in,
@@ -29,9 +30,6 @@ module fd_EX_Mem_reg(
     output wire       mem_re_out,
     output wire [9:0] store_data_out
 );
-    // Use the inverse of stall as the enable signal.
-    wire en;
-    assign en = 1'b1;
     // Latch ALU operands (10 bits)
     register_10bit REG1(.clk(~clk), .reset(reset), .en(en), .din(aluA_in), .dout(aluA_out)),
                    REG2(.clk(~clk), .reset(reset), .en(en), .din(aluB_in), .dout(aluB_out)),

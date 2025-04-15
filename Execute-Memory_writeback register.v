@@ -2,6 +2,7 @@
 
 module Exe_Mem_WB_reg(
     input  wire clk, reset,
+    input  wire en,
     // Latch the ALU result (10 bits)
     input  wire [9:0] alu_result_in,
     output wire [9:0] alu_result_out,
@@ -19,8 +20,6 @@ module Exe_Mem_WB_reg(
     output wire [2:0] gp_rdata2_address_out
     // Stall Signal
 );
-    wire en;
-    assign en = 1'b1;
     
     // Latch the ALU result.
     register_10bit REG1(.clk(~clk), .reset(reset), .en(en), .din(alu_result_in), .dout(alu_result_out));

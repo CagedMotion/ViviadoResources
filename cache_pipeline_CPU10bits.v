@@ -22,11 +22,15 @@ module cache_pipeline_CPU10bits(
     // Halt signal
     reg halted_reg;
     assign cpu_halted = halted_reg;
-
+    
+    //stall signal wire
+    wire stall_global;
+    
     // Instantiate updated Fetch Unit
     fetch_unit FU_inst (
         .clk(clk),
         .reset(rst),
+        .stalled(stall_global),
         .halted(halted_reg),
         .branch(branch_sig),
         .jump(jump_sig),
@@ -35,23 +39,12 @@ module cache_pipeline_CPU10bits(
         .pc_out(pc)
     );
 
-     //Instruction Memory (ROM)
-//    task1rom ROM_inst (
-//        .address(pc),
-//        .read_data(instr)
-//    );
-
-    //Instruction Memory (ROM)
+    // Instruction Memory (ROM)
     task2rom ROM_inst (
         .address(pc),
         .read_data(instr)
     );
     
-//    task3rom ROM_inst (
-//        .address(pc),
-//        .read_data(instr)
-//    );
-
     // Decode the instruction fields according to ISA design.
     wire [2:0] opcode   = instr[9:7];
     wire [1:0] rs_field = instr[6:5];
@@ -60,10 +53,8 @@ module cache_pipeline_CPU10bits(
     wire [1:0] fimm     = instr[1:0];
     wire [6:0] jmp_addr = instr[6:0];
     
-
     // Derive destination register as 3 bits: {bank_sel, rt_field}
     wire [2:0] dest_reg_fd = {bank_sel, rt_field};
-    reg        fd_bank_sel;
     
     // Register File
     wire [9:0] fd_rdata1, fd_rdata2;
@@ -83,15 +74,21 @@ module cache_pipeline_CPU10bits(
         .rdata2(fd_rdata2)
     );
     
-    // Instantiate the hazard unit:
-    wire stall;
-    hazard_unit hu_inst(
-        .clk(clk),
-        .rst(rst),
-        .cache_ready(cache_ready), // from the Cache module
-        .stall(stall)
+    
+    // Single hazard unit instance:
+    wire load_use_hz;     // generate this from your load-use detection logic
+    wire branch_hz;       // generate this from your branch-pending logic
+    assign load_use_hz = 1'b0;
+    assign branch_hz = 1'b0;
+    
+    hazard_unit hu (
+      .cache_ready     (cache_ready),
+      .load_use_hazard (load_use_hz),
+      .branch_hazard   (branch_hz),
+      .stall           (stall_global)
     );
 
+    
     // Signals for FD stage (to be latched into FD->EM pipeline register)
     reg  [9:0] alu_inA, alu_inB;
     reg  [2:0] fd_alu_ctrl;
@@ -107,7 +104,6 @@ module cache_pipeline_CPU10bits(
         fd_reg_we     = 1'b0;
         fd_mem_we     = 1'b0;
         fd_mem_re     = 1'b0;
-        fd_bank_sel   = bank_sel;
         fd_store_data = 10'd0;
         
         // Default branch/jump signals for fetch unit.
@@ -216,6 +212,7 @@ module cache_pipeline_CPU10bits(
     fd_EX_Mem_reg FD_EM_reg (
         .clk(clk),
         .reset(rst),
+        .en(!stall_global),
         .gp_rdata1_address_in(fd_srcA_addr),
         .gp_rdata1_address_out(gp_rdata1_address_out),
         .gp_rdata2_address_in(alt_rdata2),
@@ -277,13 +274,7 @@ module cache_pipeline_CPU10bits(
     //-------------------------------------------------------------------------
     // Instead of connecting the ALU output directly to a RAM instance,
     // insert the Cache here between the EM->WB pipeline register and the RAM.
-    //
-    // The Cache takes the effective address (alu_result) and the memory control
-    // signals. We set its CPU interface control (CPU_RW) from em_mem_we (1 => STORE,
-    // 0 => LOAD). The Cache then drives the external RAM (ramtask2) via its
-    // dedicated bus.
     //-------------------------------------------------------------------------
-
     // Signals on the CPU side of the Cache (10-bit data bus).
     wire [9:0] cache_cpu_data;
     // Signals on the RAM side of the Cache (20-bit bidirectional bus).
@@ -307,14 +298,6 @@ module cache_pipeline_CPU10bits(
          .mem_req(cache_mem_req)
     );
 
-//    ramtask1 RAM_inst (
-//        .clk(clk),
-//        .we(em_mem_we),
-//        .address(mem_addr),
-//        .wdata(mem_wdata),
-//        .rdata(mem_rdata)
-//    );
-
     ramtask2 RAM_inst (
         .clk(clk),
         .we(cache_mem_rw),       // Write enable as driven by the Cache.
@@ -324,20 +307,13 @@ module cache_pipeline_CPU10bits(
         .mem_req(cache_mem_req)
     );
     
-//    ramtask3 RAM_inst (
-//        .clk(clk),
-//        .we(em_mem_we),
-//        .address(mem_addr),
-//        .wdata(mem_wdata),
-//        .rdata(mem_rdata)
-//    );
-
     //----------------------------------------------------------
     // EM->WB Pipeline Register
     //----------------------------------------------------------
     Exe_Mem_WB_reg EM_WB_reg (
         .clk(clk), 
-        .reset(rst), 
+        .reset(rst),
+        .en(!stall_global), 
         .alu_result_in(alu_result), 
         .alu_result_out(wb_alu_result),
         .ram_rdata_in(cache_cpu_data),    // Use data coming from the Cache
@@ -350,64 +326,9 @@ module cache_pipeline_CPU10bits(
         .gp_rdata2_address_out(wb_dest)
     );
     
-    // Group 1: FD -> EM registers 
-    reg [9:0] em_operandA_reg, em_operandB_reg;
-    reg [2:0] em_alu_ctrl_reg;
-    reg       em_reg_we_reg, em_mem_we_reg, em_mem_re_reg;
-    reg [9:0] em_store_data_reg;
-    
-    // Group 2: EM -> WB registers
-    reg [9:0] wb_alu_result_reg;
-    reg [9:0] wb_mem_rdata_reg;
-    reg       wb_reg_we_reg, wb_mem_re_reg;
-    reg [2:0] wb_dest_reg;
-    
-    // Combined always block that updates both groups
-    always @(posedge clk or posedge rst) begin
-        if (rst) begin
-            // Reset Group 1
-            em_operandA_reg   <= 10'd0;
-            em_operandB_reg   <= 10'd0;
-            em_alu_ctrl_reg   <= 3'd0;
-            em_reg_we_reg     <= 1'b0;
-            em_mem_we_reg     <= 1'b0;
-            em_mem_re_reg     <= 1'b0;
-            em_store_data_reg <= 10'd0;
-            // Reset Group 2
-            wb_alu_result_reg <= 10'd0;
-            wb_mem_rdata_reg  <= 10'd0;
-            wb_reg_we_reg     <= 1'b0;
-            wb_mem_re_reg     <= 1'b0;
-            wb_dest_reg       <= 3'd0;
-        end else if (!stall) begin  // When there is no stall, update values
-            // Update Group 1 (e.g., FD->EM register values)
-            em_operandA_reg   <= alu_inA;   // Value from FD stage signal
-            em_operandB_reg   <= alu_inB;
-            em_alu_ctrl_reg   <= fd_alu_ctrl;
-            em_reg_we_reg     <= fd_reg_we;
-            em_mem_we_reg     <= fd_mem_we;
-            em_mem_re_reg     <= fd_mem_re;
-            em_store_data_reg <= fd_store_data;
-            // Update Group 2 (e.g., EM->WB register values)
-            wb_alu_result_reg <= alu_result;        // For example, from ALU in EM stage
-            wb_mem_rdata_reg  <= cache_cpu_data;          // Data from the cache (for loads)
-            wb_reg_we_reg     <= fd_reg_we;           // Control signal for reg writeback
-            wb_mem_re_reg     <= fd_mem_re;               // Load read signal
-            wb_dest_reg       <= dest_reg_fd;
-        end
-        // Else branch empty: stall condition holds the previous values.
-    end
-    
-    assign wb_alu_result = wb_alu_result_reg;
-    assign wb_mem_rdata  = wb_mem_rdata_reg;
-    assign wb_reg_we     = wb_reg_we_reg;
-    assign wb_mem_re     = wb_mem_re_reg;
-    assign wb_dest       = wb_dest_reg;
-    
     //----------------------------------------------------------
     // Stage 3: Writeback (WB)
     //----------------------------------------------------------
- 
     always @(wb_mem_re, wb_mem_rdata, wb_alu_result) begin
         if (wb_mem_re)
             final_wdata <= wb_mem_rdata;   // load
@@ -459,7 +380,6 @@ endmodule
 module tb_cache_pipeline_cpu10bits;
     reg clk;
     reg rst;
-    //wire halted;
     
     // Instantiate the CPU10bits top module.
     cache_pipeline_CPU10bits dut (
@@ -473,33 +393,13 @@ module tb_cache_pipeline_cpu10bits;
     always #(PERIOD/2) clk = ~clk;
     
     initial begin
-        //halted = 1;
         rst = 1;
         #PERIOD;
         rst = 0;
-        //halted = 0;
         
         // Optionally, drive any test stimulus here.
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-//        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
-//        #PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;#PERIOD;
+        #PERIOD; #PERIOD; #PERIOD; #PERIOD; #PERIOD; #PERIOD; #PERIOD; #PERIOD; #PERIOD;
+        // ... (additional stimulus)
         
         $finish;
     end
