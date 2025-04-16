@@ -39,20 +39,20 @@ module cache_pipeline_CPU10bits(
         .pc_out(pc)
     );
     // Instruction Memory (ROM)
-    task1rom ROM_inst (
-        .address(pc),
-        .read_data(instr)
-    );
+//    task1rom ROM_inst (
+//        .address(pc),
+//        .read_data(instr)
+//    );
 
 //    task2rom ROM_inst (
 //        .address(pc),
 //        .read_data(instr)
 //    );
     
-//    task3rom ROM_inst (
-//        .address(pc),
-//        .read_data(instr)
-//    );
+    task3rom ROM_inst (
+        .address(pc),
+        .read_data(instr)
+    );
     
     // Decode the instruction fields according to ISA design.
     wire [2:0] opcode   = instr[9:7];
@@ -145,12 +145,13 @@ module cache_pipeline_CPU10bits(
                     2'b10: fd_alu_ctrl = 3'b110; // HALT
                     2'b11: fd_alu_ctrl = 3'b111; // nop
                 endcase
-                if (fimm != 2'b10)
+                if (fimm != (2'b10 || 2'b11))
                     fd_reg_we = 1'b1;
             end
 
             // 010: BNE: Branch if not equal.
             3'b010: begin
+                fd_alu_ctrl = 3'b111;
                 if (fd_rdata1 != fd_rdata2) begin
                     branch_sig    = 1'b1;
                     branch_target = pc + zero_extend_imm(fimm);
@@ -166,12 +167,14 @@ module cache_pipeline_CPU10bits(
 
             // 100: JUMP.
             3'b100: begin
+                fd_alu_ctrl = 3'b111;
                 jump_sig    = 1'b1;
                 jump_target = sign_extend_jmp(jmp_addr);
             end
 
             // 101: BEQ: Branch if equal.
             3'b101: begin
+                fd_alu_ctrl = 3'b111;
                 if (fd_rdata1 == fd_rdata2) begin
                     branch_sig    = 1'b1;
                     branch_target = pc + zero_extend_imm(fimm);
@@ -317,14 +320,14 @@ module cache_pipeline_CPU10bits(
     );
     
     //ram instantiation.
-        ramtask1_for_cache RAM_inst (
-        .clk(clk),
-        .we(cache_mem_rw),       // Write enable as driven by the Cache.
-        .address(cache_mem_addr),
-        .data(ram_data_bus),
-        .mem_ready(mem_ready_from_RAM),
-        .mem_req(cache_mem_req)
-    );
+//        ramtask1_for_cache RAM_inst (
+//        .clk(clk),
+//        .we(cache_mem_rw),       // Write enable as driven by the Cache.
+//        .address(cache_mem_addr),
+//        .data(ram_data_bus),
+//        .mem_ready(mem_ready_from_RAM),
+//        .mem_req(cache_mem_req)
+//    );
 
 //    ramtask2_for_cache RAM_inst (
 //        .clk(clk),
@@ -335,14 +338,14 @@ module cache_pipeline_CPU10bits(
 //        .mem_req(cache_mem_req)
 //    );
     
-//        ramtask3_for_cache RAM_inst (
-//        .clk(clk),
-//        .we(cache_mem_rw),       // Write enable as driven by the Cache.
-//        .address(cache_mem_addr),
-//        .data(ram_data_bus),
-//        .mem_ready(mem_ready_from_RAM),
-//        .mem_req(cache_mem_req)
-//    );
+        ramtask3_for_cache RAM_inst (
+        .clk(clk),
+        .we(cache_mem_rw),       // Write enable as driven by the Cache.
+        .address(cache_mem_addr),
+        .data(ram_data_bus),
+        .mem_ready(mem_ready_from_RAM),
+        .mem_req(cache_mem_req)
+    );
     
     //----------------------------------------------------------
     // EM->WB Pipeline Register

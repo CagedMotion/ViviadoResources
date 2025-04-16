@@ -56,26 +56,26 @@ module task1rom(
         memory[29] <= 10'b1100100101; // load t2, 1(t3), 1
         memory[30] <= 10'b0001111100; // add 
         memory[31] <= 10'b0000010110; // slt s2, t2, s2, 1
-        memory[32] <= 10'b0001111100;
+        memory[32] <= 10'b0001111100; // add
         memory[33] <= 10'b1011011110; // beq s2, s3, jincrement, 1
         memory[34] <= 10'b1000100111; // jump continue2
     
         // jincrement:
         memory[35] <= 10'b0110101101; // addi t3, t3, 1, 1
-        memory[36] <= 10'b0000000000; //
-        memory[37] <= 10'b0000000000; //
+        memory[36] <= 10'b0000000000; // add nop
+        memory[37] <= 10'b0000000000; // add nop
         memory[38] <= 10'b1000001001; // jump loop2
     
         // continue2:
         memory[39] <= 10'b1100110100; // load s2, 0(t3), 1
-        memory[40] <= 10'b0001111100; // add
+        memory[40] <= 10'b0001111100; // add nop
         memory[41] <= 10'b1110110101; // store s2, 1(t3), 1
         memory[42] <= 10'b1110100100; // store t2, 0(t3), 1
-        memory[43] <= 10'b0001111100;
-        memory[44] <= 10'b0001111100;
+        memory[43] <= 10'b0001111100; // add
+        memory[44] <= 10'b0001111100; // add
         memory[45] <= 10'b0110101101; // addi t3, t3, 1, 1
-        memory[46] <= 10'b0000000000;
-        memory[47] <= 10'b0000000000;
+        memory[46] <= 10'b0000000000; // add
+        memory[47] <= 10'b0000000000; // add
         memory[48] <= 10'b1000001001; // jump loop2
     
         // done:

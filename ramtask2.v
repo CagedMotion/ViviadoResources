@@ -86,7 +86,7 @@ module ramtask2_for_cache(
         {ram[{temp[8:0], 1'b1}], ram[{temp[8:0], 1'b0}]};
     
     // state machine combinational logic always.
-     always @(*) begin
+     always @(state, IDLE, WAIT, EXECUTE) begin
         case (state)
             IDLE: begin
                 if (mem_req)

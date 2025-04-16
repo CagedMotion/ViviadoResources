@@ -95,7 +95,7 @@ module Cache(
                     if (hit == 1'b1) begin
                         // On hit, immediately serve the CPU.
                         next_state = IDLE_COMPARE;
-                        if (!CPU_RW) begin
+                        if (CPU_RW) begin
                             // Read: pick the appropriate half from the cache.
                             cpu_data_store_bus = (cpu_offset) ? cache_data[cpu_index][19:10]
                                                         : cache_data[cpu_index][9:0];
@@ -107,8 +107,10 @@ module Cache(
                     end else begin
                         // On miss, choose to either write-back (if dirty) or allocate.
                         if (valid[cpu_index] && dirty[cpu_index]) begin
+                            mem_req = 1'b1;
                             next_state = WRITEBACK;
                         end else begin
+                            mem_req = 1'b0;
                             next_state = ALLOCATION;
                         end
                     end
@@ -124,17 +126,17 @@ module Cache(
 //                    cache_ready = 1'b0;
 //                end
                 cache_ready = 1'b0;
-                // Write-back: write one half (word) per cycle.
                 mem_rw  = 1'b1;  // Write operation.
                 // Note: using current cpu_index here assumes the miss address is valid.
-                mem_req = 1'b1;
                 if (mem_ready==1'b1) begin 
                     mem_addr = {cache_tag[cpu_index], cpu_index, cpu_offset};
                     mem_data_ram_store_bus = cache_data[cpu_index];
+                    mem_req = 1'b0;
                     next_state = ALLOCATION;
                 end else begin
                     mem_addr = {cache_tag[cpu_index], cpu_index, cpu_offset};
                     mem_data_ram_store_bus = cache_data[cpu_index];
+                    mem_req = 1'b1;
                     next_state = WRITEBACK;
                 end
             end
@@ -148,13 +150,10 @@ module Cache(
                 cache_ready = 1'b0;
                 next_state = IDLE_COMPARE;
 //                if (mem_ready) begin
-//                    cache_ready = 1'b1;
-////                    next_state = IDLE_COMPARE;
+//                    next_state = IDLE_COMPARE;
 //                end else begin
-//                    cache_ready = 1'b0;
-////                    next_state = ALLOCATION;
+//                   next_state = ALLOCATION;
 //                end
-                    
                     
                 if (CPU_RW) begin
                     if (hit == 1'b1) begin
