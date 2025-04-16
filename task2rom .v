@@ -37,14 +37,10 @@ module task2rom(
         memory[27] <= 10'b1101010000; // load s0, 0(s0), 0  | this is cause we cleared s0 during the loop operation to do multiple additions properly.
         memory[28] <= 10'b0000000000; // add t0, t0, t0, 0
         memory[29] <= 10'b1111001010; // store t1, 2(s0), 0
-        memory[30] <= 10'b0010000010; // halt
-          
- //memory[1] <= 10'b0000000000; // just adding as like a nop to wait till the register is set.
-//          memory[0] <= 10'b1101010000; //load s0, 0(s0), 0 
-//          memory[1] <= 10'b0000110010; // slt t1, s0, t1, 0
-//          memory[2] <= 10'b0000110000; // add itself
-//          memory[13] <= 10'b0000000000; //add t1, t1, t1, 0   |
-//          memory[3] <= 10'b0010000010; //halt
+        memory[30] <= 10'b0000000000;
+        memory[31] <= 10'b0000000000;
+        memory[32] <= 10'b0000000000;
+        memory[33] <= 10'b0010000010; // halt
         
     end
     

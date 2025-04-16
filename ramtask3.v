@@ -18,35 +18,41 @@ module ramtask3_for_cache(
     parameter WAIT    = 2'b01; // First delay cycle: mem_ready is low.
     parameter EXECUTE = 2'b10; // Second cycle: perform the operation, then set mem_ready high.
     
+    integer i;
     initial begin
         state = IDLE;
         next_state = IDLE;
         mem_ready = 1'b1;
         ram[0] = 10'b0000000110; // ram location 5 is the start of the nul 
-        ram[1] = 10'b0000110010;
+        ram[1] = 10'b0000110010; // location 50
         ram[3] = 10'b0000010100; 
         //ram[2] = 10'b1000010000;//ARRAY 1 ADDRESS
         ram[5] = 10'b0000000000;
-        ram[6] = 10'b0001010111;
-        ram[7] = 10'b0001100001;
-        ram[8] = 10'b0001100110;
-        ram[9] = 10'b0001100110;
-        ram[10] = 10'b0001101100;
-        ram[11] = 10'b0001100101;
-        ram[12] = 10'b0001110011;
-        ram[13] = 10'b0001000001;
-        ram[14] = 10'b0001101110;
-        ram[15] = 10'b0001100100;
-        ram[16] = 10'b0001010000;
-        ram[17] = 10'b0001100001;
-        ram[18] = 10'b0001101110;
-        ram[19] = 10'b0001100011;
-        ram[20] = 10'b0001100001;
-        ram[21] = 10'b0001101011;
-        ram[22] = 10'b0001100101;
-        ram[23] = 10'b0001110011;
-        ram[24] = 10'b0000000000;
+        ram[6] = 10'b0001010111; //W
+        ram[7] = 10'b0001100001; //A
+        ram[8] = 10'b0001100110; //F
+        ram[9] = 10'b0001100110; //F
+        ram[10] = 10'b0001101100; //L
+        ram[11] = 10'b0001100101; //E
+        ram[12] = 10'b0001110011; //s
+        ram[13] = 10'b0001000001; //A
+        ram[14] = 10'b0001101110; //N
+        ram[15] = 10'b0001100100; //D
+        ram[16] = 10'b0001010000; //P
+        ram[17] = 10'b0001100001; //A
+        ram[18] = 10'b0001101110; //N
+        ram[19] = 10'b0001100011; //C
+        ram[20] = 10'b0001100001; //A
+        ram[21] = 10'b0001101011; //K
+        ram[22] = 10'b0001100101; //E
+        ram[23] = 10'b0001110011; //S
+        ram[24] = 10'b0000000000; 
         ram[25] = 10'b1001000000;
+        
+        for(i=26; i<1024; i=i+1)
+            ram[i] = 10'b0;
+        
+        
      end
 
     reg [19:0] read_data;

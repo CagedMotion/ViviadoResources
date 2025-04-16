@@ -118,11 +118,12 @@ module Cache(
             end
             
             WRITEBACK: begin
-                if (mem_ready == 1'b1) begin
-                    cache_ready = 1'b1;
-                end else begin
-                    cache_ready = 1'b0;
-                end
+//                if (mem_ready == 1'b1) begin
+//                    cache_ready = 1'b1;
+//                end else begin
+//                    cache_ready = 1'b0;
+//                end
+                cache_ready = 1'b0;
                 // Write-back: write one half (word) per cycle.
                 mem_rw  = 1'b1;  // Write operation.
                 // Note: using current cpu_index here assumes the miss address is valid.
@@ -144,14 +145,15 @@ module Cache(
                 // Use the latched tag and index (from when the miss occurred)
                 mem_addr = {cpu_tag, cpu_index, cpu_offset};
                 // Once both halves are read, finish allocation.
+                cache_ready = 1'b0;
                 next_state = IDLE_COMPARE;
-                if (mem_ready) begin
-                    cache_ready = 1'b1;
-//                    next_state = IDLE_COMPARE;
-                end else begin
-                    cache_ready = 1'b0;
-//                    next_state = ALLOCATION;
-                end
+//                if (mem_ready) begin
+//                    cache_ready = 1'b1;
+////                    next_state = IDLE_COMPARE;
+//                end else begin
+//                    cache_ready = 1'b0;
+////                    next_state = ALLOCATION;
+//                end
                     
                     
                 if (CPU_RW) begin
@@ -195,10 +197,10 @@ module Cache(
             valid[cpu_index]     <= 1'b1;
             if (CPU_RW) begin
                 // Write miss: update the appropriate half using the latched CPU data.
-                if (mem_ready==1'b1) begin
-                    cache_data[cpu_index] <= mem_data_ram_write; 
-                    dirty[cpu_index] <= 1'b0;
-                end
+//                if (mem_ready==1'b1) begin
+//                    cache_data[cpu_index] <= mem_data_ram_write; 
+//                    dirty[cpu_index] <= 1'b0;
+//                end
                 if (cpu_offset) begin
                     // CPU intended to write to the upper half.
                     cache_data[cpu_index][19:10] <= cpu_data_bus; 
@@ -218,10 +220,11 @@ module Cache(
 
         // For write hits (when the block is already in the cache), update the cache directly.
         if (state == IDLE_COMPARE && hit && CPU_RW) begin
-            if (cpu_offset)
+            if (cpu_offset) begin
                 cache_data[cpu_index][19:10] <= cpu_data_write;
-            else
+            end else begin
                 cache_data[cpu_index][9:0]  <= cpu_data_write;
+            end
             dirty[cpu_index] <= 1'b1;
         end
     end

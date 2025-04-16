@@ -102,7 +102,7 @@ module ALU(
                 alu_out   = 10'b0;          // For HALT, drive result low
                 halt_flag = 1'b1;           // and set the halt flag.
             end
-            3'b111: alu_out = equal_result;
+            3'b111: alu_out = 10'b0;
             default: alu_out = 10'b0;
         endcase
     end

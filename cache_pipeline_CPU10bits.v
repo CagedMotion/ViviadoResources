@@ -39,15 +39,15 @@ module cache_pipeline_CPU10bits(
         .pc_out(pc)
     );
     // Instruction Memory (ROM)
-//    task1rom ROM_inst (
-//        .address(pc),
-//        .read_data(instr)
-//    );
-
-    task2rom ROM_inst (
+    task1rom ROM_inst (
         .address(pc),
         .read_data(instr)
     );
+
+//    task2rom ROM_inst (
+//        .address(pc),
+//        .read_data(instr)
+//    );
     
 //    task3rom ROM_inst (
 //        .address(pc),
@@ -143,7 +143,7 @@ module cache_pipeline_CPU10bits(
                     2'b00: fd_alu_ctrl = 3'b100; // SLR
                     2'b01: fd_alu_ctrl = 3'b101; // SLL
                     2'b10: fd_alu_ctrl = 3'b110; // HALT
-                    default: fd_alu_ctrl = 3'b000;
+                    2'b11: fd_alu_ctrl = 3'b111; // nop
                 endcase
                 if (fimm != 2'b10)
                     fd_reg_we = 1'b1;
@@ -317,16 +317,7 @@ module cache_pipeline_CPU10bits(
     );
     
     //ram instantiation.
-//        ramtask1_for_cache RAM_inst (
-//        .clk(clk),
-//        .we(cache_mem_rw),       // Write enable as driven by the Cache.
-//        .address(cache_mem_addr),
-//        .data(ram_data_bus),
-//        .mem_ready(mem_ready_from_RAM),
-//        .mem_req(cache_mem_req)
-//    );
-
-    ramtask2_for_cache RAM_inst (
+        ramtask1_for_cache RAM_inst (
         .clk(clk),
         .we(cache_mem_rw),       // Write enable as driven by the Cache.
         .address(cache_mem_addr),
@@ -334,6 +325,15 @@ module cache_pipeline_CPU10bits(
         .mem_ready(mem_ready_from_RAM),
         .mem_req(cache_mem_req)
     );
+
+//    ramtask2_for_cache RAM_inst (
+//        .clk(clk),
+//        .we(cache_mem_rw),       // Write enable as driven by the Cache.
+//        .address(cache_mem_addr),
+//        .data(ram_data_bus),
+//        .mem_ready(mem_ready_from_RAM),
+//        .mem_req(cache_mem_req)
+//    );
     
 //        ramtask3_for_cache RAM_inst (
 //        .clk(clk),

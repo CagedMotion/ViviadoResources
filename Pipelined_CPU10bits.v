@@ -37,10 +37,10 @@ module pipeline_CPU10bits(
     );
 
      //Instruction Memory (ROM)
-    task1rom ROM_inst (
-        .address(pc),
-        .read_data(instr)
-    );
+//    task1rom ROM_inst (
+//        .address(pc),
+//        .read_data(instr)
+//    );
 
  //    Instruction Memory (ROM)
 //    task2rom ROM_inst (
@@ -48,10 +48,10 @@ module pipeline_CPU10bits(
 //        .read_data(instr)
 //    );
     
-//    task3rom ROM_inst (
-//        .address(pc),
-//        .read_data(instr)
-//    );
+    task3rom ROM_inst (
+        .address(pc),
+        .read_data(instr)
+    );
 
     // Decode the instruction fields according to ISA design.
     wire [2:0] opcode   = instr[9:7];
@@ -272,13 +272,13 @@ module pipeline_CPU10bits(
     wire [9:0] mem_addr  = alu_result;
     wire [9:0] mem_wdata = (em_mem_we) ? em_store_data : 10'd0;
 
-    ramtask1 RAM_inst (
-        .clk(clk),
-        .we(em_mem_we),
-        .address(mem_addr),
-        .wdata(mem_wdata),
-        .rdata(mem_rdata)
-    );
+//    ramtask1 RAM_inst (
+//        .clk(clk),
+//        .we(em_mem_we),
+//        .address(mem_addr),
+//        .wdata(mem_wdata),
+//        .rdata(mem_rdata)
+//    );
 
 //    ramtask2 RAM_inst (
 //        .clk(clk),
@@ -288,13 +288,13 @@ module pipeline_CPU10bits(
 //        .rdata(mem_rdata)
 //    );
     
-//    ramtask3 RAM_inst (
-//        .clk(clk),
-//        .we(em_mem_we),
-//        .address(mem_addr),
-//        .wdata(mem_wdata),
-//        .rdata(mem_rdata)
-//    );
+    ramtask3 RAM_inst (
+        .clk(clk),
+        .we(em_mem_we),
+        .address(mem_addr),
+        .wdata(mem_wdata),
+        .rdata(mem_rdata)
+    );
 
     //----------------------------------------------------------
     // EM->WB Pipeline Register
