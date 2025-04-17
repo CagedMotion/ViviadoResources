@@ -3,7 +3,8 @@
 module cache_pipeline_CPU10bits(
     input  wire clk,
     input  wire rst,
-    output wire cpu_halted  // Indicates that the CPU has halted.
+    output wire cpu_halted,  // Indicates that the CPU has halted.
+    output wire instr_valid
 );
 
     //----------------------------------------------------------
@@ -26,6 +27,15 @@ module cache_pipeline_CPU10bits(
     //stall signal wire
     wire stall_global;
     
+    reg instr_valid_r;
+    always @(posedge clk or posedge rst) begin
+        if (rst)
+            instr_valid_r <= 1'b0;
+        else
+            instr_valid_r <= !stall_global;  
+    end
+    assign instr_valid = instr_valid_r & ~halted_reg;
+    
     // Instantiate updated Fetch Unit
     fetch_unit FU_inst (
         .clk(clk),
@@ -39,20 +49,20 @@ module cache_pipeline_CPU10bits(
         .pc_out(pc)
     );
     // Instruction Memory (ROM)
-    task1rom ROM_inst (
-        .address(pc),
-        .read_data(instr)
-    );
+//    task1rom ROM_inst (
+//        .address(pc),
+//        .read_data(instr)
+//    );
 
 //    task2rom ROM_inst (
 //        .address(pc),
 //        .read_data(instr)
 //    );
     
-//    task3rom ROM_inst (
-//        .address(pc),
-//        .read_data(instr)
-//    );
+    task3rom ROM_inst (
+        .address(pc),
+        .read_data(instr)
+    );
     
     // Decode the instruction fields according to ISA design.
     wire [2:0] opcode   = instr[9:7];
@@ -320,14 +330,14 @@ module cache_pipeline_CPU10bits(
     );
     
     //ram instantiation.
-        ramtask1_for_cache RAM_inst (
-        .clk(clk),
-        .we(cache_mem_rw),       // Write enable as driven by the Cache.
-        .address(cache_mem_addr),
-        .data(ram_data_bus),
-        .mem_ready(mem_ready_from_RAM),
-        .mem_req(cache_mem_req)
-    );
+//        ramtask1_for_cache RAM_inst (
+//        .clk(clk),
+//        .we(cache_mem_rw),       // Write enable as driven by the Cache.
+//        .address(cache_mem_addr),
+//        .data(ram_data_bus),
+//        .mem_ready(mem_ready_from_RAM),
+//        .mem_req(cache_mem_req)
+//    );
 
 //    ramtask2_for_cache RAM_inst (
 //        .clk(clk),
@@ -338,14 +348,14 @@ module cache_pipeline_CPU10bits(
 //        .mem_req(cache_mem_req)
 //    );
     
-//        ramtask3_for_cache RAM_inst (
-//        .clk(clk),
-//        .we(cache_mem_rw),       // Write enable as driven by the Cache.
-//        .address(cache_mem_addr),
-//        .data(ram_data_bus),
-//        .mem_ready(mem_ready_from_RAM),
-//        .mem_req(cache_mem_req)
-//    );
+        ramtask3_for_cache RAM_inst (
+        .clk(clk),
+        .we(cache_mem_rw),       // Write enable as driven by the Cache.
+        .address(cache_mem_addr),
+        .data(ram_data_bus),
+        .mem_ready(mem_ready_from_RAM),
+        .mem_req(cache_mem_req)
+    );
     
     //----------------------------------------------------------
     // EM->WB Pipeline Register
@@ -418,32 +428,78 @@ module cache_pipeline_CPU10bits(
 endmodule
 
 module tb_cache_pipeline_cpu10bits;
-    reg        clk;
-    reg        rst;
+    //------------------------------------------------------------------------
+    // Parameters
+    //------------------------------------------------------------------------
+    parameter PERIOD       = 10;       // ns (→ 100 MHz)
+    
+    //------------------------------------------------------------------------
+    // DUT I/Os
+    //------------------------------------------------------------------------
+    reg        clk = 1'b1;
+    reg        rst = 1'b1;
     wire       halted;
 
-    // Instantiate the CPU10bits top module.
+    //------------------------------------------------------------------------
+    // Performance counters
+    //------------------------------------------------------------------------
+    integer    cycle_count   = 0;
+    real       start_time_ns;
+    real       stop_time_ns;
+    // (Optional) if your CPU exports an "instr_valid" pulse, you can count instructions:
+    integer instr_count = 0;
+    wire    instr_valid;  // hook this up to your core's retire-valid
+
+    //------------------------------------------------------------------------
+    // Clock gen
+    //------------------------------------------------------------------------
+    always #(PERIOD/2) clk = ~clk;
+
+    //------------------------------------------------------------------------
+    // Instantiate DUT
+    //------------------------------------------------------------------------
     cache_pipeline_CPU10bits dut (
         .clk       (clk),
         .rst       (rst),
-        .cpu_halted(halted)   // now connected to our TB
+        .cpu_halted(halted),
+        .instr_valid(instr_valid)
     );
-    
-    parameter PERIOD = 10;
-    
-    // clock generator
-    initial clk = 1'b1;
-    always #(PERIOD/2) clk = ~clk;
-    
+
+    //------------------------------------------------------------------------
+    // Cycle counter
+    //------------------------------------------------------------------------
+    always @(posedge clk) begin
+        if (!rst && !halted) begin
+            cycle_count = cycle_count + 1;
+        end
+        // Optional instruction counting:
+        if (instr_valid) instr_count = instr_count + 1;
+    end
+
+    //------------------------------------------------------------------------
+    // Reset release & timestamp the start
+    //------------------------------------------------------------------------
     initial begin
-        // reset pulse
-        rst = 1;
-        #PERIOD;
-        rst = 0;
-        
-        // now wait until the CPU asserts halt
-        wait (halted == 1);
-        $display(">> CPU halted at time %0t ns", $time);
+        #PERIOD;        // hold reset for 1 cycle
+        rst = 1'b0;
+        @(negedge rst); // wait for reset deassert
+        start_time_ns = $realtime;
+    end
+
+    //------------------------------------------------------------------------
+    // Wait for halt, then report
+    //------------------------------------------------------------------------
+    initial begin
+        wait (halted);
+        stop_time_ns = $realtime;
+        $display("\n=== CPU PERFORMANCE ===");
+        $display("  Cycles executed     : %0d", cycle_count);
+        $display("  Simulated time      : %0.3f ns", stop_time_ns - start_time_ns);
+        $display("  Wall-clock @100 MHz : %0.3f µs", (stop_time_ns - start_time_ns)/1e3);
+        // if you counted instrs:
+        $display("  Instructions        : %0d", instr_count);
+        $display("  CPI                 : %0.2f", cycle_count / (instr_count*1.0));
         $finish;
     end
 endmodule
+

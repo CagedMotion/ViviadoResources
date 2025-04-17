@@ -3,7 +3,8 @@
 module pipeline_CPU10bits(
     input  wire clk,
     input  wire rst,
-    output wire cpu_halted  // Indicates that the CPU has halted.
+    output wire cpu_halted,  // Indicates that the CPU has halted.
+    output wire instr_valid 
 );
 
     //----------------------------------------------------------
@@ -22,7 +23,18 @@ module pipeline_CPU10bits(
     // Halt signal
     reg halted_reg;
     assign cpu_halted = halted_reg;
-
+    
+      // instr_valid: pulse high for one cycle whenever an instruction
+      // actually commits (i.e. on the writeback stage reg write)
+      reg instr_valid_r;
+      always @(posedge clk or posedge rst) begin
+        if (rst)
+          instr_valid_r <= 1'b0;
+        else
+          instr_valid_r <= wb_reg_we;  // wb_reg_we is high when the WB stage writes
+      end
+      assign instr_valid = instr_valid_r & ~halted_reg;
+    
     // Instantiate updated Fetch Unit
     fetch_unit FU_inst (
         .clk(clk),
@@ -37,10 +49,10 @@ module pipeline_CPU10bits(
     );
 
      //Instruction Memory (ROM)
-    task1rom ROM_inst (
-        .address(pc),
-        .read_data(instr)
-    );
+//    task1rom ROM_inst (
+//        .address(pc),
+//        .read_data(instr)
+//    );
 
  //    Instruction Memory (ROM)
 //    task2rom ROM_inst (
@@ -48,10 +60,10 @@ module pipeline_CPU10bits(
 //        .read_data(instr)
 //    );
     
-//    task3rom ROM_inst (
-//        .address(pc),
-//        .read_data(instr)
-//    );
+    task3rom ROM_inst (
+        .address(pc),
+        .read_data(instr)
+    );
 
     // Decode the instruction fields according to ISA design.
     wire [2:0] opcode   = instr[9:7];
@@ -272,13 +284,13 @@ module pipeline_CPU10bits(
     wire [9:0] mem_addr  = alu_result;
     wire [9:0] mem_wdata = (em_mem_we) ? em_store_data : 10'd0;
 
-    ramtask1 RAM_inst (
-        .clk(clk),
-        .we(em_mem_we),
-        .address(mem_addr),
-        .wdata(mem_wdata),
-        .rdata(mem_rdata)
-    );
+//    ramtask1 RAM_inst (
+//        .clk(clk),
+//        .we(em_mem_we),
+//        .address(mem_addr),
+//        .wdata(mem_wdata),
+//        .rdata(mem_rdata)
+//    );
 
 //    ramtask2 RAM_inst (
 //        .clk(clk),
@@ -288,13 +300,13 @@ module pipeline_CPU10bits(
 //        .rdata(mem_rdata)
 //    );
     
-//    ramtask3 RAM_inst (
-//        .clk(clk),
-//        .we(em_mem_we),
-//        .address(mem_addr),
-//        .wdata(mem_wdata),
-//        .rdata(mem_rdata)
-//    );
+    ramtask3 RAM_inst (
+        .clk(clk),
+        .we(em_mem_we),
+        .address(mem_addr),
+        .wdata(mem_wdata),
+        .rdata(mem_rdata)
+    );
 
     //----------------------------------------------------------
     // EM->WB Pipeline Register
@@ -368,34 +380,80 @@ module pipeline_CPU10bits(
 endmodule
 
 module tb_pipeline_cpu10bits;
-    reg clk;
-    reg rst;
-    wire cpu_halted;  // Connect to the halt signal from your design
+    //------------------------------------------------------------------------
+    // Parameters
+    //------------------------------------------------------------------------
+    parameter PERIOD = 10;      // ns → 100 MHz
 
-    // Instantiate the CPU10bits top module and connect the halt output.
-    pipeline_CPU10bits dut (
-        .clk(clk),
-        .rst(rst),
-        .cpu_halted(cpu_halted)  // Monitor this signal
-    );
-    
-    parameter PERIOD = 10;
-    
-    // Clock generation: toggles clock indefinitely.
-    initial clk = 1'b1;
+    //------------------------------------------------------------------------
+    // DUT signals
+    //------------------------------------------------------------------------
+    reg        clk    = 1'b0;
+    reg        rst    = 1'b1;
+    wire       halted;
+    wire       instr_valid;      // ← catch the new pulse
+
+    //------------------------------------------------------------------------
+    // Performance counters
+    //------------------------------------------------------------------------
+    integer    cycle_count = 0;
+    integer    instr_count = 0;
+    real       start_ns;
+    real       stop_ns;
+
+    //------------------------------------------------------------------------
+    // Clock generator
+    //------------------------------------------------------------------------
     always #(PERIOD/2) clk = ~clk;
-    
-    // Reset stimulus.
-    initial begin
-        rst = 1;
-        #PERIOD;
-        rst = 0;
+
+    //------------------------------------------------------------------------
+    // Instantiate your pipeline CPU
+    //------------------------------------------------------------------------
+    pipeline_CPU10bits dut (
+      .clk         (clk),
+      .rst         (rst),
+      .cpu_halted  (halted),
+      .instr_valid (instr_valid)
+    );
+
+    //------------------------------------------------------------------------
+    // Count cycles (only while running)
+    //------------------------------------------------------------------------
+    always @(posedge clk) begin
+      if (!rst && !halted)
+        cycle_count = cycle_count + 1;
     end
 
-    // Monitor the halt signal and finish simulation when asserted.
+    //------------------------------------------------------------------------
+    // Count instructions
+    //------------------------------------------------------------------------
+    always @(posedge clk) begin
+      if (instr_valid)
+        instr_count = instr_count + 1;
+    end
+
+    //------------------------------------------------------------------------
+    // Release reset & stamp start time
+    //------------------------------------------------------------------------
     initial begin
-        wait (cpu_halted == 1);
-        $display("Halt signal detected. Finishing simulation.");
-        $finish;
+      #PERIOD;          // hold reset for 1 cycle
+      rst = 1'b0;
+      @(negedge rst);
+      start_ns = $realtime;
+    end
+
+    //------------------------------------------------------------------------
+    // Wait for halt, stamp stop time, print everything
+    //------------------------------------------------------------------------
+    initial begin
+      wait (halted);
+      stop_ns = $realtime;
+      $display("\n=== PIPELINE PERFORMANCE ===");
+      $display("  Cycles executed       : %0d", cycle_count);
+      $display("  Instructions retired  : %0d", instr_count);
+      $display("  Simulated time        : %0.3f ns", stop_ns - start_ns);
+      $display("  Wall-clock @100 MHz   : %0.3f µs", (stop_ns - start_ns)/1e3);
+      $display("  CPI                   : %0.2f", cycle_count/(instr_count*1.0));
+      $finish;
     end
 endmodule
