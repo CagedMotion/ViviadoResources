@@ -9,21 +9,14 @@ module task3rom(
     initial begin
         memory[1] <= 10'b1100110100; // load s2, 0(t3), 1; | this is the first array address we load to get the address to start pulling values in.
         memory[2] <= 10'b1100111101; // load s3, 1(t3), 1; | this is the second array address from loading and storing the values from the first array.
-        memory[3] <= 10'b0000101101; // nop
-        memory[4] <= 10'b1101000100; // load t2, 0(s2), 1; : loop | start of the loop which is loading the first value from array 1.
-        memory[5] <= 10'b0000101101; // nop
-        memory[6] <= 10'b0000101101; // nop
-        memory[7] <= 10'b0000101101; // sub t3, t3, t3, 1; | making sure there is zero in the register we will compare it is complete.
-        memory[8] <= 10'b0000101101; // nop
-        memory[9] <= 10'b1111100100; // store t2, 0(s3), 1; | storing the second value in array 2.
-        memory[10] <= 10'b0000101101; // nop
-        memory[11] <= 10'b0111010101; // addi s2, s2, 1, 1;
-        memory[12] <= 10'b0000101101; // nop
-        memory[13] <= 10'b0111111101; // addi s3, s3, 1, 1;              
-        memory[14] <= 10'b0000101101; // nop     
-        memory[15] <= 10'b1010100110; // beq t3, t2, complete mem[14], 1; offset of 2 for the branch.
-        memory[16] <= 10'b1000000011; // jump loop mem[5] | back to loop start in rom.
-        memory[17] <= 10'b0010000010; // halt : complete
+        memory[3] <= 10'b1101000100; // load t2, 0(s2), 1; : loop | start of the loop which is loading the first value from array 1.
+        memory[4] <= 10'b0000101101; // sub t3, t3, t3, 1; | making sure there is zero in the register we will compare it is complete.
+        memory[5] <= 10'b1111100100; // store t2, 0(s3), 1; | storing the second value in array 2.
+        memory[6] <= 10'b0111010101; // addi s2, s2, 1, 1;
+        memory[7] <= 10'b0111111101; // addi s3, s3, 1, 1;               
+        memory[8] <= 10'b1010100110; // beq t3, t2, complete mem[14], 1; offset of 2 for the branch.
+        memory[9] <= 10'b1000000011; // jump loop mem[5] | back to loop start in rom.
+        memory[10] <= 10'b0010000010; // halt : complete
 
         
     end

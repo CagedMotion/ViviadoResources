@@ -39,20 +39,20 @@ module cache_pipeline_CPU10bits(
         .pc_out(pc)
     );
     // Instruction Memory (ROM)
-//    task1rom ROM_inst (
-//        .address(pc),
-//        .read_data(instr)
-//    );
+    task1rom ROM_inst (
+        .address(pc),
+        .read_data(instr)
+    );
 
 //    task2rom ROM_inst (
 //        .address(pc),
 //        .read_data(instr)
 //    );
     
-    task3rom ROM_inst (
-        .address(pc),
-        .read_data(instr)
-    );
+//    task3rom ROM_inst (
+//        .address(pc),
+//        .read_data(instr)
+//    );
     
     // Decode the instruction fields according to ISA design.
     wire [2:0] opcode   = instr[9:7];
@@ -320,14 +320,14 @@ module cache_pipeline_CPU10bits(
     );
     
     //ram instantiation.
-//        ramtask1_for_cache RAM_inst (
-//        .clk(clk),
-//        .we(cache_mem_rw),       // Write enable as driven by the Cache.
-//        .address(cache_mem_addr),
-//        .data(ram_data_bus),
-//        .mem_ready(mem_ready_from_RAM),
-//        .mem_req(cache_mem_req)
-//    );
+        ramtask1_for_cache RAM_inst (
+        .clk(clk),
+        .we(cache_mem_rw),       // Write enable as driven by the Cache.
+        .address(cache_mem_addr),
+        .data(ram_data_bus),
+        .mem_ready(mem_ready_from_RAM),
+        .mem_req(cache_mem_req)
+    );
 
 //    ramtask2_for_cache RAM_inst (
 //        .clk(clk),
@@ -338,14 +338,14 @@ module cache_pipeline_CPU10bits(
 //        .mem_req(cache_mem_req)
 //    );
     
-        ramtask3_for_cache RAM_inst (
-        .clk(clk),
-        .we(cache_mem_rw),       // Write enable as driven by the Cache.
-        .address(cache_mem_addr),
-        .data(ram_data_bus),
-        .mem_ready(mem_ready_from_RAM),
-        .mem_req(cache_mem_req)
-    );
+//        ramtask3_for_cache RAM_inst (
+//        .clk(clk),
+//        .we(cache_mem_rw),       // Write enable as driven by the Cache.
+//        .address(cache_mem_addr),
+//        .data(ram_data_bus),
+//        .mem_ready(mem_ready_from_RAM),
+//        .mem_req(cache_mem_req)
+//    );
     
     //----------------------------------------------------------
     // EM->WB Pipeline Register

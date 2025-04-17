@@ -57,10 +57,6 @@ module ramtask3_for_cache(
 
     reg [19:0] read_data;
     
-//    reg latched_we;
-//    reg [9:0] latched_address;
-//    reg [19:0] latched_write_data;  // Only used if it's a write operation
-    
     wire [8:0] temp;
     assign temp = address [9:1];    
     

@@ -14,9 +14,8 @@ module ramtask2_for_cache(
     
     reg [1:0] state, next_state;
         
-    parameter IDLE    = 2'b00; // Memory is idle and ready. mem_ready is high.
-    parameter WAIT    = 2'b01; // First delay cycle: mem_ready is low.
-    parameter EXECUTE = 2'b10; // Second cycle: perform the operation, then set mem_ready high.
+    parameter IDLE    = 1'b0; // Memory is idle and ready. mem_ready is high.
+    parameter WAIT    = 1'b1; // First delay cycle: mem_ready is low.
     
     integer i;
     initial begin
@@ -74,19 +73,15 @@ module ramtask2_for_cache(
     
     reg [19:0] read_data;
     
-    reg latched_we;
-    reg [9:0] latched_address;
-    reg [19:0] latched_write_data;  // Only used if it's a write operation
-    
-    wire [8:0] temp;
+     wire [8:0] temp;
     assign temp = address [9:1];    
     
-    assign data = ((state == IDLE) && (we == 1'b1)) ?
+    assign data = (we == 1'b1) ?
         20'bzzzzzzzzzz_zzzzzzzzzz :
         {ram[{temp[8:0], 1'b1}], ram[{temp[8:0], 1'b0}]};
     
     // state machine combinational logic always.
-     always @(state, IDLE, WAIT, EXECUTE) begin
+     always @(*) begin
         case (state)
             IDLE: begin
                 if (mem_req)
@@ -95,9 +90,6 @@ module ramtask2_for_cache(
                     next_state = IDLE;
             end
             WAIT: begin
-                next_state = EXECUTE;
-            end
-            EXECUTE: begin
                 next_state = IDLE;
             end
             default: next_state = IDLE;
@@ -111,36 +103,29 @@ module ramtask2_for_cache(
             IDLE: begin
                 // Only latch the new operation if a request is active.
                 if (mem_req) begin
-                    latched_we <= we;
-                    latched_address <= address;
-                    if (we) begin
-                        latched_write_data <= data; // Latch the write data
-                    end
+//                    latched_we <= we;
+//                    latched_address <= address;
+//                    if (we) begin
+//                        latched_write_data <= data; // Latch the write data
+//                    end
                     mem_ready <= 1'b0;
                 end else begin
                     mem_ready <= 1'b1;
                 end
-                if (latched_we) begin
-                    // Write operation:
-                    // If the latched address's bit 0 is 0, write to the lower half; if 1, to the upper half.
-                    if (latched_address[0] == 1'b0)
-                        ram[{latched_address[9:1], 1'b0}] <= latched_write_data[9:0];
-                    else
-                        ram[{latched_address[9:1], 1'b1}] <= latched_write_data[19:10];
-                end else begin
-                    // Read operation:
-                    // Combine both 10-bit halves from the selected block.
-                    read_data <= { ram[{latched_address[9:1], 1'b1}],
-                                   ram[{latched_address[9:1], 1'b0}] };
-                end
             end
             WAIT: begin
                 // During the delay cycle, maintain mem_ready low.
-                mem_ready <= 1'b0;
-            end
-            EXECUTE: begin
-                // In EXECUTE, perform the actual read or write.
-                // After execution, signal that RAM is ready for a new operation.
+                if (we) begin
+                    // Write operation:
+                    // If the latched address's bit 0 is 0, write to the lower half; if 1, to the upper half.
+                    ram[{address[9:1], 1'b0}] <= data[9:0];
+                    ram[{address[9:1], 1'b1}] <= data[19:10];
+                end else begin
+                    // Read operation:
+                    // Combine both 10-bit halves from the selected block.
+                    read_data <= { ram[{address[9:1], 1'b1}],
+                                   ram[{address[9:1], 1'b0}] };
+                end
                 mem_ready <= 1'b1;
             end
             default: begin
