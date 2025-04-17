@@ -12,10 +12,10 @@ module ramtask1_for_cache(
     // Memory array: 1024 entries of 10 bits each.
     reg [9:0] ram[1023:0];
     
-    reg [1:0] state, next_state;
+    reg state, next_state;
         
-    parameter IDLE    = 2'b00; // Memory is idle and ready. mem_ready is high.
-    parameter WAIT    = 2'b01; // First delay cycle: mem_ready is low.
+    parameter IDLE    = 1'b0; // Memory is idle and ready. mem_ready is high.
+    parameter WAIT    = 1'b1; // First delay cycle: mem_ready is low.
     
     integer i;
     initial begin
@@ -23,9 +23,9 @@ module ramtask1_for_cache(
         next_state = IDLE;
         mem_ready = 1'b1;
     
-        ram[0] = 10'b0000010110; // value 22;
-        ram[1] = 10'b0000001010;
-        ram[2] = 10'b0000010101; // value 21;
+        ram[0] =  10'b0000010110; // value 22;
+        ram[1] =  10'b0000001010;
+        ram[2] =  10'b0000010101; // value 21;
         ram[10] = 10'b0000010101;  //21
         ram[11] = 10'b0000010100;  //20
         ram[12] = 10'b0000010011;  //19
@@ -58,7 +58,7 @@ module ramtask1_for_cache(
     
     reg [19:0] read_data;
     
-     wire [8:0] temp;
+    wire [8:0] temp;
     assign temp = address [9:1];    
     
     assign data = (we == 1'b1) ?

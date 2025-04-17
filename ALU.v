@@ -69,9 +69,9 @@ module ALU(
     assign slt_result = sub_result[9] ? 10'b0000000001 : 10'b0000000000;
     
     
-    wire [9:0] equal_result,temp_equal;
-    assign temp_equal = A - B;
-    assign equal_result = ~(10'b0 | temp_equal);
+//    wire [9:0] equal_result,temp_equal;
+//    assign temp_equal = A - B;
+//    assign equal_result = ~(10'b0 | temp_equal);
 
     
     // ALU Output Multiplexer
